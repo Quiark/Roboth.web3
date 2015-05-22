@@ -42,6 +42,9 @@ Template['components_accounts'].helpers({
     */
 
 	'accounts': function(){
-		return Accounts.find({});	
-	},
+		return Accounts.find({}).map(function(el) {
+			el['selected'] = (Session.get('selected_account') == el['number']);
+			return el;
+		});
+	}
 });

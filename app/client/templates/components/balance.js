@@ -32,12 +32,13 @@ _.extend(Template['components_balance'], {
 
 	'created': function() {
 		this.updateBalance = Meteor.setInterval(function() {
-			var coinbase = web3.eth.coinbase;
-			var originalBalance = 0;
-			var balance = web3.eth.getBalance(coinbase);
-			var originalBalance = web3.toDecimal(balance);
+			var sum = new BigNumber(0);
+			for (var acc in web3.eth.accounts) {
+				var balance = web3.eth.getBalance(web3.eth.accounts[acc]);
+				sum = sum.plus(balance);
+			}
 
-			Session.set("balance", balance.toString(10));
+			Session.set("balance", sum.toString());
 		}, 1 * 1000);
 	},
 

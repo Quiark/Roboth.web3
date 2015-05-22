@@ -63,3 +63,6 @@ Template.registerHelper('formatNumber', function(number, format){
         return numeral(number).format(format);
 });
 
+Template.registerHelper('iff', function(cond, tt, ff) {
+		return cond ? tt : ff;
+});

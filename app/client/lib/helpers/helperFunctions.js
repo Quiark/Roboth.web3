@@ -98,3 +98,9 @@ Helpers.formatTime = function(time, format) { //parameters
     } else
         return '';
 };
+
+Helpers.selectedAcc = function() {
+    var sel = Session.get('selected_account');
+    return Accounts.find({number: sel}).fetch()[0].address;
+
+};

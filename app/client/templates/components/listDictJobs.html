@@ -1,0 +1,29 @@
+<template name="components_listDictJobs">
+    <div class="panel panel-default panel-dapp">
+        <div class="panel-heading">Dict Jobs</div>
+		<div class="btn btn-default" id="bRefreshList">Refresh</div>
+        <div class="panel-body">
+            <table class="table table-bordered">
+                <thead><tr>
+                        <td>#</td>
+                        <td>word</td>
+                </tr></thead>
+                <tbody>{{#each dict_jobs}}
+                    <tr>
+                        <td>
+                            {{number}}
+                        </td>
+                        <td>
+                            {{word}}
+                        </td>
+                    </tr>
+                {{/each}}
+                </tbody>
+            </table>
+        </div>
+        <div class="panel-heading">My Dict Job</div>
+        <div class="panel-body">
+            {{my_jobid}}
+        </div>
+    </div>
+</template>
