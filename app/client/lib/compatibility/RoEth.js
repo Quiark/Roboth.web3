@@ -11,9 +11,7 @@ function RoEthCls() {
 	this. RegistrarAPI = web3.eth.contract(this.RegistrarABI);
 	this. Registrar = this.RegistrarAPI.at(this.RegistrarAddr);
 
-	this. RobothABI = 
-		[{"inputs": [], "type": "function", "constant": true, "name": "m_next_jobid", "outputs": [{"type": "uint256", "name": ""}]}, {"inputs": [{"type": "address", "name": "owner"}], "type": "function", "constant": true, "name": "getDictionaryJobIdByOwner", "outputs": [{"type": "uint256", "name": ""}]}, {"inputs": [{"type": "uint256", "name": ""}], "type": "function", "constant": true, "name": "m_dict_words", "outputs": [{"type": "bytes32", "name": ""}]}, {"inputs": [{"type": "uint256", "name": "jobid"}], "type": "function", "constant": true, "name": "getDictionaryJob", "outputs": [{"type": "bytes32", "name": ""}]}, {"inputs": [], "type": "function", "constant": true, "name": "tst", "outputs": [{"type": "bytes32", "name": ""}]}, {"inputs": [{"type": "address", "name": ""}], "type": "function", "constant": true, "name": "m_dict_jobs", "outputs": [{"type": "uint256", "name": ""}]}, {"inputs": [], "type": "function", "constant": true, "name": "jobid", "outputs": [{"type": "uint256", "name": ""}]}, {"inputs": [{"type": "bytes32", "name": "word"}], "type": "function", "constant": false, "name": "createDictionaryJob", "outputs": [{"type": "uint256", "name": ""}]}]
-	;
+	this. RobothABI = window.RobothABI;
 	this. RobothAPI = web3.eth.contract(this.RobothABI);
 	this. Roboth = this.RobothAPI.at(this.Registrar.addr('Roboth'));
 
@@ -31,18 +29,83 @@ RoEthCls.instance = function() {
 	return window._roeth_inst;
 }
 
-RoEthCls.prototype.UpdateDictJobs = function() {
-	for (var i = 0; i < 10; i++) {
-		var job_wrd = this.Roboth.getDictionaryJob(i);
-		if ((job_wrd != null) && (job_wrd != '')) {
-			window.DictJobs.update(
-                {number: i},
-                {$set: {word: job_wrd}},
-                {upsert: true});
+
+RoEthCls.prototype.UpdateUserData = function(after) {
+	var xUserData = {};
+	// TODO : implement after
+	// TODO: make this a reactive dict so it can be refreshed
+	for (var i = 0; i < Roboth.m_next_userid().toFixed(); i++) {
+		var user = Roboth.m_userdata_idx(i)
+		var usrdat = Roboth.m_userdata(user);
+
+		var user_obj = {
+			address: user,
+			jobs: [],
+			solutions: []
+		};
+
+		var mem_user_obj = {
+			jobs: [],
+			solutions: []
+		};
+
+		// fetch dictjobs
+		for (var dji = 0; dji < usrdat[0].toFixed(); dji ++) {
+			var res = Roboth.getDictJob(user, dji);
+			var job = {
+				word: res[0],
+				reward: res[1].toString(),
+				owner: user,
+				idx: dji
+			};
+			var _id = DictJobs.insert(job);
+			user_obj.jobs.push(_id);
+			mem_user_obj.jobs.push(job);
 		}
+
+		UserData.insert(user_obj);
+		xUserData[user] = mem_user_obj;
 	}
 
+	for (var i = 0; i < Roboth.m_next_userid().toFixed(); i++) {
+		var user = Roboth.m_userdata_idx(i)
+		var usrdat = Roboth.m_userdata(user);
+		var sol_ids = [];
+
+		// fetch solutions
+		for (var si = 0; si < usrdat[1].toFixed(); si ++) {
+			var res = Roboth.getSolution(user, si);
+			var sol = {
+				job_user: res[0],
+				job_idx: res[1],
+				idx: si,
+
+				desc: res[2]
+			};
+
+			sol.job_id = DictJobs.find({owner: sol.job_user, idx: sol.job_idx})._id;
+			var _id = Solutions.insert(sol);
+			sol_ids.push(_id);
+			xUserData[user].solutions.push(sol);
+		}
+
+		// update UserData
+		UserData.update({address: user}, {'$set': {solutions: sol_ids}});
+	}
+
+	// update UI
+	rUserData.set(xUserData);
 }
+
+/* idea
+function SolidityIdIterator(inst, max_fn, item_fn) {
+	this.inst = inst;
+	this.max_fn = max_fn;
+	this.item_fn = item_fn;
+
+}
+*/
+
 
 /**
 how long it takes for things to get stored in blockchain
@@ -76,3 +139,8 @@ RoEthCls.MyJobId = {
 		}
 	}
 };
+
+// TODO: automated later-call 
+RoEthCls.BlockUpdatedFn = function(fn) {};
+
+

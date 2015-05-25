@@ -1,7 +1,7 @@
 {
 	"dapp": {
 		"app": {
-			"title": "My Ethereum ÐApp"
+			"title": "Roboth.web3"
 			, "buttons": {
 				"view1": "View1"
 				, "view2": "View2"
@@ -29,7 +29,7 @@
 			}
 			, "accounts": {
 				"header": "My Accounts"
-				, "description": "These are your Ethereum addresses. The identicons are generated based on the address value. Note, balance is static."			
+				, "description": "These are your Ethereum addresses. Select your active account by clicking on it."
 			}
 			, "multiplyContract": {
 				"header": "Multiply Contract"

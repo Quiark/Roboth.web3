@@ -63,6 +63,21 @@ Template.registerHelper('formatNumber', function(number, format){
         return numeral(number).format(format);
 });
 
+/**
+Convert Wei to Ether Values
+
+@method (toEth)
+*/
+Template.registerHelper('toEth', function(wei) {
+	if (wei) {
+		if ((typeof wei) == 'string') wei = new BigNumber(wei);
+		
+		return web3.fromWei(wei, LocalStore.get('etherUnit')).toPrecision(8);
+	} else {
+		return '?';
+	}
+});
+
 Template.registerHelper('iff', function(cond, tt, ff) {
 		return cond ? tt : ff;
 });

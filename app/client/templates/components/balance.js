@@ -19,7 +19,7 @@ Template['components_balance'].helpers({
     */
 
     'watchBalance': function(){        
-		return web3.fromWei(Session.get('balance'), LocalStore.get('etherUnit')).toString(10);
+		return Session.get('balance');
     },
 });
 

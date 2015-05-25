@@ -11,6 +11,8 @@ The accounts template
 @constructor
 */
 
+var template_this = Template['components_accounts'];
+
 Meteor.startup(function () {
 	// Insert accounts into collection.
 	var accounts = web3.eth.accounts;
@@ -22,18 +24,21 @@ Meteor.startup(function () {
 			Accounts.insert({number: count, address: address, balance: web3.eth.getBalance(address).toString(10), createdAt: new Date()});
 		});
 	}
+
+	Session.set('selected_account', 2);
+});
+
+template_this.events({
+	'click .acc_row': function(event, tpl) {
+		var num = Number.parseInt( $(event.currentTarget).data('accNum') );
+
+		Session.set('selected_account', num);
+	}
+
 });
 
 Template['components_accounts'].helpers({
-	/**
-    Convert Wei to Ether Values
 
-    @method (toEth)
-    */
-
-	'toEth': function(wei){
-		return web3.fromWei(wei, LocalStore.get('etherUnit')).toString(10);
-	},
 
 	/**
     Get Eth Accounts

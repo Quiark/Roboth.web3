@@ -7,10 +7,24 @@
 				highly skilled translators with a high reputation!
 			</p>
 			<form id="frmCreateDictJob">
-				<input type="text" id="word" class="form-control" placeholder="your word">
-				<div id="bSubmit" class="btn btn-default">Submit</div>
-				<div id="bCheck" class="btn btn-default">Check</div>
+				<div class="input-group">
+					<span class="input-group-addon">{{sel_acc}}</span>
+					<input type="text" id="word" class="form-control" placeholder="your word">
+				</div>
+				<div id="bSubmit" class="btn btn-default">Submit &amp; Pay</div>
 			</form>
+			<p>
+				Status:
+			</p>
+			{{#if Roboth_live}}
+				<div class="alert alert-success">
+					Roboth contract is live!
+				</div>
+			{{else}}
+				<div class="alert alert-danger">
+					Roboth contract is not running :(
+				</div>
+			{{/if}}
 		</div>
 	</div>
 </template>

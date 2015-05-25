@@ -1,23 +1,25 @@
 var template_this = Template['components_listDictJobs'];
 
-this. DictJobs = new Mongo.Collection();
 
 Meteor.startup(function() {
-	window.RoEthCls.instance().UpdateDictJobs();
+	window.RoEthCls.instance().UpdateUserData();
 
 });
 
 template_this.events({
 	'click #bRefreshList': function(event, tpl) {
-		RoEthCls.instance().UpdateDictJobs();
+		RoEthCls.instance().UpdateUserData();
 	}
 
 });
 
 
 template_this.helpers({
-    'dict_jobs': function() {
-        return DictJobs.find({});
+    'userdata': function() {
+		return _.map(rUserData.get(), function(v, k) {
+			v['address'] = k;
+			return v;
+		});
     },
 
     'my_jobid': function() {

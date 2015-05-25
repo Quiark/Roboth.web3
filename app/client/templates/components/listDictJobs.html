@@ -7,16 +7,22 @@
                 <thead><tr>
                         <td>#</td>
                         <td>word</td>
+                        <td>reward</td>
                 </tr></thead>
-                <tbody>{{#each dict_jobs}}
+                <tbody>
+				{{#each userdata}}
                     <tr>
-                        <td>
-                            {{number}}
+                        <td colspan="3">
+                            {{address}}
                         </td>
-                        <td>
-                            {{word}}
-                        </td>
-                    </tr>
+					</tr>
+					{{#each jobs}}
+					<tr>
+						<td> {{idx}} </td>
+						<td> {{word}} </td>
+						<td> {{toEth reward}} </td>
+					</tr>
+					{{/each}}
                 {{/each}}
                 </tbody>
             </table>
