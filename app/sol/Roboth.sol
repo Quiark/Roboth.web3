@@ -82,6 +82,8 @@ contract Roboth is mortal {
 
 		uint32 solid = usrdat.next_solutionid;
 		usrdat.solutions[solid].desc = my_desc;
+		usrdat.solutions[solid].job_user = job_user;
+		usrdat.solutions[solid].job_id = job_id;
 		usrdat.next_solutionid += 1;
 	}
 

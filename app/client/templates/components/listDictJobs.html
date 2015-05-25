@@ -8,6 +8,7 @@
                         <td>#</td>
                         <td>word</td>
                         <td>reward</td>
+						<td>ops</td>
                 </tr></thead>
                 <tbody>
 				{{#each userdata}}
@@ -21,15 +22,14 @@
 						<td> {{idx}} </td>
 						<td> {{word}} </td>
 						<td> {{toEth reward}} </td>
+						<td>
+							<div class="job_answer btn btn-default" data-job-id="{{idx}}" data-owner="{{owner}}">Answer</div>
+						</td>
 					</tr>
 					{{/each}}
                 {{/each}}
                 </tbody>
             </table>
-        </div>
-        <div class="panel-heading">My Dict Job</div>
-        <div class="panel-body">
-            {{my_jobid}}
         </div>
     </div>
 </template>

@@ -1,0 +1,21 @@
+<template name="components_createSolution">
+	<div class="panel panel-default panel-dapp" style="display: {{tpl_display}}">
+		<div class="panel-heading">Answer a Dict Job</div>
+		<div class="panel-body">
+			<dl class="list-group dl-horizontal">
+				<dt class="heading">Answer as</dt>
+				<dd class=""> {{sel_acc}} </dd>
+				<dt class="heading">Word</dt>
+				<dd class=""> {{data.word}} </dd>
+				<dt class="heading">To user</dt>
+				<dd class=""> {{data.word_owner}} </dd>
+				<dt class="heading">Reward offered</dt>
+				<dd class=""> {{toEth data.reward}} </dd>
+			</dl>
+			<form id="frmCreateSolution">
+				<input id="iSolution" type="text" class="form-control" placeholder="your explanation"/>
+				<div id="bSubmit" class="btn btn-default">Submit</div>
+			</form>
+		</div>
+	</div>
+</template>

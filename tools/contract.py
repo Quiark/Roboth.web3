@@ -149,10 +149,10 @@ def add_testdata(ci):
 	gas = 400*1000
 
 	data = contract_api.encode('createJob', ['petty']).encode('hex')
-	eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas)
+	eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas, value=web3.toWei(0.1))
 
-	data = contract_api.encode('createJob', ['Rilakkuma']).encode('hex')
-	eth.sendTransaction(data=data, from_=eth.accounts()[0], to=ci.addr, gas=gas)
+	data = contract_api.encode('createJob', ['Hello Kitty']).encode('hex')
+	eth.sendTransaction(data=data, from_=eth.accounts()[0], to=ci.addr, gas=gas, value=web3.toWei(0.5))
 
 
 def write_abi(ci):
