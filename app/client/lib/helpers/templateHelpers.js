@@ -71,8 +71,9 @@ Convert Wei to Ether Values
 Template.registerHelper('toEth', function(wei) {
 	if (wei) {
 		if ((typeof wei) == 'string') wei = new BigNumber(wei);
+		var unit = LocalStore.get('etherUnit');
 		
-		return web3.fromWei(wei, LocalStore.get('etherUnit')).toPrecision(8);
+		return web3.fromWei(wei, unit).toPrecision(8) + ' ' + unit;
 	} else {
 		return '?';
 	}
