@@ -1,69 +1,33 @@
-# meteor-dapp-boilerplate
+# Roboth.web3
 
-A starting point for decentralized MeteorJS applications. Includes Ethereum.js, iron-router, Bootstrap 3, Font Awesome, LESS and more.
+A simple and stupid experimental DApp for ethereum. The idea is to create a job market for people where users
+can submit jobs (thus the name, from Czech 'robota' = work) for other people to do or work on other people's tasks for rewards. A bit like Mechanical Turk.
+It should integrate a reputation system to allow grading the workers and selecting the best solution and sosuch.
+Since this is just in a very early stage of development, the only type of task is submitting dictionary explanation
+of english words. 
 
-**Based off of [Differential's meteor-boilerplate](https://github.com/Differential/meteor-boilerplate) and [Ethereum's meteor-dapp-wallet](https://github.com/ethereum/meteor-dapp-wallet). Please note that this boilerplate is still in Alpha.
+Based off of [SilentCicero's meteor-boilerplate](https://github.com/SilentCicero/meteor-dapp-boilerplate) 
 
-* [Included Packages](#included-packages)
 * [Installation](#installation)
 * [Deployment](#deployment)
 * [File Structure](#file-structure)
 * [Bootstrap and Less](#bootstrap-and-less)
 * [Favicons and Touch Icons](#favicons-and-touch-icons)
 
-## <a name="included-packages"></a> Included Packages
-
-* Collections:
-  * [dburles:collection-helpers](https://github.com/dburles/meteor-collection-helpers)
-  * [matb33:collection-hooks](https://github.com/matb33/meteor-collection-hooks)
-  * [reywood:publish-composite](https://github.com/englue/meteor-publish-composite)
-  * [frozeman:persistent-minimongo](https://github.com/frozeman/meteor-persistent-minimongo)
-* Router:
-  * [iron:router](https://github.com/EventedMind/iron-router)
-  * [zimme:iron-router-active](https://github.com/zimme/meteor-iron-router-active)
-  * [yasinuslu:blaze-meta](https://github.com/yasinuslu/blaze-meta)
-* [Less](http://lesscss.org)
-  * [Bootstrap](http://getbootstrap.com)
-  * [Font Awesome](http://fontawesome.io)
-* [Ethereum](http://ethereum.org)
-  * [ethereum:elements](https://github.com/ethereum/meteor-package-elements)
-  * [ethereum:tools](https://github.com/ethereum/meteor-package-tools)
-  * [ethereum:js](https://github.com/ethereum/ethereum.js)
-* Numbers:
-  * [3stack:bignumber](https://github.com/MikeMcl/bignumber.js/)
-  * [chance.js](http://chancejs.com/)
-* Language:
-  * [tap:i18n](https://github.com/TAPevents/tap-i18n)
-* Misc:
-  * [Moment.js](http://momentjs.com/)
-  * [chuangbo:cookie](https://github.com/chuangbo/meteor-cookie)
-  * [Underscore.js](http://underscorejs.org/)
-  * [Underscore.string](http://epeli.github.io/underscore.string/)
-  * [frozeman:storage](https://github.com/frozeman/meteor-storage)
-  * [frozeman:template-var](https://github.com/frozeman/meteor-template-var)
-  * [frozeman:reactive-timer](https://github.com/frozeman/meteor-reactive-timer)
-
-## <a name="installation"></a> Installation
-
-1. Clone this repo to `<yourapp>`
-
-  `git clone https://github.com/SilentCicero/meteor-dapp-boilerplate.git <yourapp>`
-
-2. Remove `.git`
-
-  `cd <yourapp>/app && rm -rf .git`
-
-3. Start coding!
 
 ## <a name="development"></a> Development
 
-Start an eth node open the http://localhost:3000 in *mist*, *mix* or *alethzero* or run a CPP node as follows:
+Clone this repo
 
-    $ eth -j -b // for a mining node: $ eth -j -b -f -n no -m yes
+	$ git clone https://github.com/Quiark/Roboth.web3
+
+Start a geth node 
+
+    $ geth --rpc --rpcaddr="localhost" --unlock=primary --rpcport="8080" --rpccorsdomain="http://localhost:3000" console
 
 Start your app using meteor
 
-    $ cd <yourapp>/app
+    $ cd Roboth.web3/app
     $ meteor
 
 Go to http://localhost:3000

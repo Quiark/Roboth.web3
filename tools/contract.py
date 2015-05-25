@@ -3,10 +3,16 @@ import sys
 import json
 import requests
 from pprint import pprint
-from overlog import ovlg, ovlocal
 import subprocess
 
 import ethereum.abi as eabi
+from overlog import ovlg, ovlocal
+
+from store import *
+
+ovlg().trace_except()
+
+MainStore = Store()
 
 def obj_hook(d):
 	for k in d.keys():
@@ -36,8 +42,9 @@ class EthRpc(object):
 			'params': params,
 			'id': _id
 		})
-		response = requests.post("http://{}:{}".format(self.host, self.port), data=data).json()
+		response = None
 		try:
+			response = requests.post("http://{}:{}".format(self.host, self.port), data=data).json()
 			return response['result']
 		except:
 			print response
@@ -57,11 +64,11 @@ class EthRpc(object):
 	def accounts(self):
 		return self._call('eth_accounts')
 
-eth = EthRpc('guardian', 8545)
+eth = EthRpc(*MainStore.data['geth_conn'])
 prim_acc = eth.accounts()[1]
 con_name = 'Roboth'
 
-def compile(src, rpc=True):
+def compile_internal(src, rpc=True):
 	if isinstance(src, file):
 		src = src.read()
 
@@ -82,32 +89,50 @@ def compile(src, rpc=True):
 		return json.loads(stdout)
 
 
+def abi_to_ascii(abi):
+	'ContractTranslator doesnt like method names in unicode'
+	for i in abi:
+		for fn in i['inputs'] + i.get('outputs', []):
+			fn['name'] = fn['name'].encode()
+			if 'type' in fn: fn['type'] = fn['type'].encode()
+		if 'name' in i: i['name'] = i['name'].encode()
+		if 'type' in i: i['type'] = i['type'].encode()
+	return abi
 
-def deploy():
-	compiled = compile(open('../app/sol/{}.sol'.format(con_name)))
 
-	#code = '0x' + compiled['contracts'][con_name]['binary']
-	#abi = compiled['contracts'][con_name]['json-abi']
+def compile():
+	compiled = compile_internal(open('../app/sol/{}.sol'.format(con_name)))
 	ovlg().data('heres the compiled stuff', compiled)
+
 	code = compiled[con_name]['code']
-	abi = compiled[con_name]['info']['abiDefinition']
+	abi = abi_to_ascii(compiled[con_name]['info']['abiDefinition'])
 
 	ovlg().data(code, abi)
 	print '---- ABI ---- %< ----'
 	print json.dumps(abi, indent=None)
-	#print abi.replace('\n', '').replace(' ', '')
+	return ContractInfo(abi=abi, code=code, name=con_name)
+
+
+def deploy():
+	ci = compile()
 
 	# actual deployment
-	res = eth.sendTransaction(data=code, from_=prim_acc, gas=1800000)
+	res = eth.sendTransaction(data=ci.code, from_=prim_acc, gas=1800000)
 	ovlg().data( deployed_at=res )
 	if res.startswith('0x'): res = res[2:]
+	ci.addr = res
+
+	# ok now deployed, save it
+	ci.register_with_store(MainStore)
 
 	print '---- ADDR ---- %< ----'
-	print res
+	print ci.addr
 
-	register(con_name, res)
+	register(con_name, ci.addr)
 
 	print 'Registered as ', con_name
+	return ci
+
 
 def register(con_name, addr):
 	# reserve the name first using primary account
@@ -118,4 +143,30 @@ def register(con_name, addr):
 	data = transl.encode('setAddress', [con_name, addr, 1]).encode('hex')
 	eth.sendTransaction(data=data, from_=prim_acc, to=RegistrarAddr)
 
-deploy()
+
+def add_testdata(ci):
+	contract_api = eabi.ContractTranslator(ci.abi)
+	gas = 400*1000
+
+	data = contract_api.encode('createJob', ['petty']).encode('hex')
+	eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas)
+
+	data = contract_api.encode('createJob', ['Rilakkuma']).encode('hex')
+	eth.sendTransaction(data=data, from_=eth.accounts()[0], to=ci.addr, gas=gas)
+
+
+def write_abi(ci):
+	path = '../app/client/lib/compatibility/{}.abi.js'.format(ci.name)
+	with open(path, 'wc') as outf:
+		outf.write('window.{}ABI = {};'.format(ci.name, json.dumps(ci.abi)))
+
+
+try:
+	if True:
+		ci = MainStore.last_ci()
+	else:
+		ci = deploy()
+		write_abi(ci)
+	add_testdata(ci)
+finally:
+	MainStore.save()
