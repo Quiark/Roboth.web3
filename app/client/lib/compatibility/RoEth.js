@@ -35,6 +35,15 @@ RoEthCls.instance = function() {
 window.RoEthCls = RoEthCls;
 window.RoInst = RoEthCls.instance;
 
+/**
+Currently the primary data structure in the contract is UserData which is a mapping of each
+user's jobs and proposed solutions to other jobs.
+This class takes care of updating that data structure from the blockchain and providing it
+to the templates in a reactive way.
+
+@class UserDataManager
+*/
+
 UserDataManager = function(RoEth) {
 	this.react_var = new ReactiveVar();
 	this.dirty = true;
@@ -44,6 +53,7 @@ UserDataManager = function(RoEth) {
 	this.enableAutoUpdater();
 }
 
+/**  Subscribe to updates from blockchain_tracker using a Meteor autorun. */
 UserDataManager.prototype.enableAutoUpdater = function() {
 	var self = this;
 	Deps.autorun(function() {
@@ -53,6 +63,7 @@ UserDataManager.prototype.enableAutoUpdater = function() {
 
 }
 
+/**  Indicate that GUI should be refreshed next time there's a new block */
 UserDataManager.prototype.setDirty = function() {
 	this.dirty = true;
 }
@@ -65,11 +76,13 @@ UserDataManager.prototype.autoUpdater = function() {
 	}
 }
 
+/**  For use in template helpers */
 UserDataManager.prototype.get = function() {
 	return this.react_var.get();
 }
 
 UserDataManager.prototype.update = function() {
+	// TODO: remove old code that tries to build a minimongo collection
 	var xUserData = {};
 
 	for (var i = 0; i < Roboth.m_next_userid().toFixed(); i++) {
@@ -146,13 +159,12 @@ function SolidityIdIterator(inst, max_fn, item_fn) {
 */
 
 
+
 /**
-how long it takes for things to get stored in blockchain
-so we can update the GUI after this
+ReactiveVar wrapper that updates when there is a new block. Polls once every 6s
+
+@class BlockchainUpdateTracker
 */
-RoEthCls. BLOCK_TIME = 12 * 1000;  // ms
-
-
 
 BlockchainUpdateTracker = function() {
 	this.last_block = web3.eth.blockNumber;

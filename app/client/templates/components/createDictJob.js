@@ -15,6 +15,7 @@ template_this.events({
 		// TODO: bind visual feedback with the update
 		//Helpers.startSubmitting(tpl.$('input'));
 
+		// TODO it may appear 2 blocks later
 		RoEthCls.instance().userdata_mgr.setDirty();
 	},
 
