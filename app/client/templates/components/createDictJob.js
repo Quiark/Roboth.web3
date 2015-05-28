@@ -6,14 +6,16 @@ template_this.events({
 		window.RoEthCls.instance();
 
 		// send the transaction, on the client
-		var wrd = tpl.$('#iWord').val();
-		var reward = tpl.$('#iReward').val();
+		var wrd = tpl.$('#iWord');
+		var reward = tpl.$('#iReward');
 
-		Roboth.createJob.sendTransaction(wrd, {from: Helpers.selectedAcc(), value: web3.toWei(reward), gas: 400 * 1000});
+		Roboth.createJob.sendTransaction(wrd.val(), {from: Helpers.selectedAcc(), value: web3.toWei(reward.val()), gas: 400 * 1000});
 
 		// trigger update
-		//RoEthCls.MyJobId.refresh(RoEthCls.BLOCK_TIME);
-		RoEthCls.instance().UpdateUserData(RoEthCls.BLOCK_TIME);
+		// TODO: bind visual feedback with the update
+		//Helpers.startSubmitting(tpl.$('input'));
+
+		RoEthCls.instance().userdata_mgr.setDirty();
 	},
 
 	'click #bCheck': function(event, tpl) {
@@ -23,7 +25,7 @@ template_this.events({
 
 template_this.helpers({
 	'Roboth_live': function() {
-		if (Roboth == null) return false;
+		if (window.Roboth == null) return false;
 		if (!web3) return false;
 		return web3.eth.getCode(Roboth.address) != '0x';
 	},

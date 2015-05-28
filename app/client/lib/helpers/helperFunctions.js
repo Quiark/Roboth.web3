@@ -20,7 +20,8 @@ Reruns functions reactively, based on an interval. Use it like so:
 @method (rerun)
 **/
 Helpers.rerun = {
-    '10s': new ReactiveTimer(10)
+    '10s': new ReactiveTimer(10),
+    '6s': new ReactiveTimer(6)
 };
 
 
@@ -101,6 +102,21 @@ Helpers.formatTime = function(time, format) { //parameters
 
 Helpers.selectedAcc = function() {
     var sel = Session.get('selected_account');
-    return Accounts.find({number: sel}).fetch()[0].address;
+	if (Accounts.find().count() > 0) {
+		var fnd = Accounts.find({number: sel}); 
+		if (fnd.count() > 0) return fnd.fetch()[0].address;
+		else Session.set('selected_account', 0);
+	} else {
+		return null;
+	}
+};
 
+Helpers.startSubmitting = function(inp) {
+	var $inp = $(inp);
+	$inp.addClass('submitting');
+	$inp.val('Submitting').prop('disabled', true);
+
+	var finish_fn = function() {
+		$inp.removeClass('submitting').val().prop('disabled', false);
+	};
 };

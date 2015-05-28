@@ -1,10 +1,10 @@
 {
 	"dapp": {
 		"app": {
-			"title": "Roboth.web3"
+			"title": "Roboth.web3 - Ðistributed work market"
 			, "buttons": {
-				"view1": "View1"
-				, "view2": "View2"
+				"view1": "Status"
+				, "view2": "Jobs Available"
 			}
 			, "headers": {
 				"identicon": "Identicon"

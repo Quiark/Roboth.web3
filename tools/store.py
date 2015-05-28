@@ -9,8 +9,7 @@ class Store(object):
 	def __init__(self):
 		self.path = 'store.cpickle'
 		self.data = {
-			'contracts': list(),
-			'geth_conn': ['guardian', 8545]
+			'contracts': list()
 		}
 
 		self.load()

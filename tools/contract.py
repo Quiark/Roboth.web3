@@ -5,7 +5,13 @@ import requests
 from pprint import pprint
 import subprocess
 
+# Required
+# https://github.com/ethereum/pyethereum
 import ethereum.abi as eabi
+
+# This is my Overlog library for sending logs/debugging output to a browser
+# https://github.com/Quiark/overlog
+# feel free to either .) Install it  or .) Just delete these calls
 from overlog import ovlg, ovlocal
 
 from store import *
@@ -15,6 +21,7 @@ ovlg().trace_except()
 MainStore = Store()
 
 def obj_hook(d):
+	"""Contract translator doesnt like Unicode strings as identifiers"""
 	for k in d.keys():
 		v = d[k]
 		if isinstance(v, unicode):
@@ -64,7 +71,7 @@ class EthRpc(object):
 	def accounts(self):
 		return self._call('eth_accounts')
 
-eth = EthRpc(*MainStore.data['geth_conn'])
+eth = EthRpc('guardian', 8545)
 prim_acc = eth.accounts()[1]
 con_name = 'Roboth'
 
@@ -113,9 +120,7 @@ def compile():
 	return ContractInfo(abi=abi, code=code, name=con_name)
 
 
-def deploy():
-	ci = compile()
-
+def deploy(ci):
 	# actual deployment
 	res = eth.sendTransaction(data=ci.code, from_=prim_acc, gas=1800000)
 	ovlg().data( deployed_at=res )
@@ -149,10 +154,10 @@ def add_testdata(ci):
 	gas = 400*1000
 
 	data = contract_api.encode('createJob', ['petty']).encode('hex')
-	eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas, value=web3.toWei(0.1))
+	eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas, value='100000000000000000')
 
 	data = contract_api.encode('createJob', ['Hello Kitty']).encode('hex')
-	eth.sendTransaction(data=data, from_=eth.accounts()[0], to=ci.addr, gas=gas, value=web3.toWei(0.5))
+	eth.sendTransaction(data=data, from_=eth.accounts()[0], to=ci.addr, gas=gas, value='160000000000000000')
 
 
 def write_abi(ci):
@@ -165,8 +170,10 @@ try:
 	if True:
 		ci = MainStore.last_ci()
 	else:
-		ci = deploy()
-		write_abi(ci)
+		ci = compile()
+
+	ci = deploy(ci)
+	write_abi(ci)
 	add_testdata(ci)
 finally:
 	MainStore.save()
