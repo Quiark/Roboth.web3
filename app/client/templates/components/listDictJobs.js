@@ -21,8 +21,17 @@ template_this.events({
 			reward: job.reward
 		});
 		Session.set('createSolution_visible', true);
-	}
+	},
 
+	'click .job_solutions': function(event, tpl) {
+		var btn = $(event.currentTarget);
+		var job = RoInst().userdata_mgr.get()[btn.data('owner')].jobs[btn.data('jobId')];
+		Session.set('listSolutions_data', {
+			job_id: btn.data('jobId'),
+			job_owner: btn.data('owner'),
+			word: job.word
+		});
+	}
 });
 
 

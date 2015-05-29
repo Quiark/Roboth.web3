@@ -1,0 +1,29 @@
+<template name="components_listSolutions">
+    <div class="panel panel-default panel-dapp">
+        <div class="panel-heading">Solutions</div>
+        <div class="panel-body">
+			<dl class="list-group dl-horizontal">
+				<dt class="heading">Word</dt>
+				<dd>{{data.word}}</dd>
+				<dt class="heading">Proposed by</dt>
+				<dd>{{data.job_owner}}</dd>
+			</dl>
+            <table class="table table-bordered">
+                <thead><tr>
+                        <td>solution</td>
+                        <td>author</td>
+						<td>ops</td>
+                </tr></thead>
+                <tbody>
+				{{#each solutions}}
+					<tr>
+						<td>{{desc}}</td>
+						<td>{{author}}</td>
+						<td>&nbsp;</td>
+					</tr>
+				{{/each}}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</template>

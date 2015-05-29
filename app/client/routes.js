@@ -48,4 +48,8 @@ Router.route('/view2', {
 });
 
 
+Router.route('/view_solutions', {
+    template: 'views_view_solutions',
+    name: 'view_solutions'
+});
 

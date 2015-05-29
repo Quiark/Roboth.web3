@@ -5,6 +5,7 @@
 			, "buttons": {
 				"view1": "Status"
 				, "view2": "Jobs Available"
+				, "view_solutions": "Solutions"
 			}
 			, "headers": {
 				"identicon": "Identicon"
@@ -20,7 +21,7 @@
 				, "mining": "Mining"
 				, "gasPrice": "Gas Price"
 			}
-			, "copyright": "Copyright © My Ethereum ÐApp 2015. All Rights Reserved"
+			, "copyright": "Copyright © Tyrannosaurus Rex 2015. All Rights Reserved"
 		}
 		, "components": {
 			"balance": {
