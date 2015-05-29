@@ -6,7 +6,7 @@
 				<dt class="heading">Word</dt>
 				<dd>{{data.word}}</dd>
 				<dt class="heading">Proposed by</dt>
-				<dd>{{data.job_owner}}</dd>
+				<dd>{{regName data.job_owner}}</dd>
 			</dl>
             <table class="table table-bordered">
                 <thead><tr>
@@ -18,7 +18,7 @@
 				{{#each solutions}}
 					<tr>
 						<td>{{desc}}</td>
-						<td>{{author}}</td>
+						<td>{{regName author}}</td>
 						<td>&nbsp;</td>
 					</tr>
 				{{/each}}

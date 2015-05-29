@@ -82,3 +82,11 @@ Template.registerHelper('toEth', function(wei) {
 Template.registerHelper('iff', function(cond, tt, ff) {
 		return cond ? tt : ff;
 });
+
+Template.registerHelper('regName', function(addr) {
+	return RoInst().reg_cache.regName(addr);
+});
+
+Template.registerHelper('regAddr', function(name) {
+	return RoInst().reg_cache.regAddr(name);
+});

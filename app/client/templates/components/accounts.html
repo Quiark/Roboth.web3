@@ -10,6 +10,7 @@
 					<td>#</td>
 					<td>{{i18n 'dapp.app.headers.identicon'}}</td>
 					<td>{{i18n 'dapp.app.headers.address'}}</td>
+					<td>Name</td>
 					<td>{{i18n 'dapp.app.headers.balance'}}</td>
 				</tr>
 			</thead>
@@ -18,6 +19,7 @@
 					<td>{{number}}</td>
 					<td>{{> dapp_identicon identity=address class="dapp-small"}}</td>
 					<td> {{address}}</td>
+					<td> {{regName address}}</td>
 					<td>{{toEth balance}}</td>
 				</tr>
 				{{/each}}</tbody>

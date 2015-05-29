@@ -19,6 +19,7 @@ function RoEthCls() {
 	// singleton
 	window.Roboth = this.Roboth;
 
+	this.reg_cache = new RegistrarCache(this, true);
 	this.blockchain_tracker = new BlockchainUpdateTracker();
 	this.userdata_mgr = new UserDataManager(this);
 
@@ -29,6 +30,13 @@ RoEthCls.instance = function() {
 		window._roeth_inst = new window.RoEthCls();
 	}
 	return window._roeth_inst;
+}
+
+/**  For results of contract calls */
+RoEthCls.isNull = function(res) {
+	if ((res == '') || (res == null) || (res == undefined)) return true;
+	if (new BigNumber(res).equals(0)) return true;
+	return false;
 }
 
 // some convenience global vars
@@ -179,3 +187,66 @@ BlockchainUpdateTracker.prototype.stop = function() {
 	this.interval_id = null;
 }
 
+
+/**
+  Memoization for registrar data
+
+  @class RegistrarCache
+  */
+RegistrarCache = function(ro_eth, watch) {
+	this.ro_eth = ro_eth;
+	this.by_name = {};
+	this.by_addr = {};
+	this.watch = watch;
+	this.filters = {};
+}
+
+RegistrarCache.prototype.regName = function(addr) {
+	if (RoEthCls.isNull(addr)) return '0x00';
+
+	if (! this.by_addr[addr]) {
+		var fnd = this.ro_eth.Registrar.name(addr);
+
+		if (fnd != '') {
+			this.by_addr[addr] = fnd;
+			this.by_name[this.by_addr[addr]] = addr;
+
+			if (this.watch) this.watchItem(this.by_addr[addr]);
+
+		} else {
+			return addr;
+		}
+	}
+	return this.by_addr[addr];
+}
+
+RegistrarCache.prototype.regAddr = function(name) {
+	if (! this.by_name[name]) {
+		var fnd = this.ro_eth.Registrar.addr(name);
+
+		if (! RoEthCls.isNull(fnd)) {
+			this.by_name[name] = fnd;
+			this.by_addr[this.by_name[name]] = name;
+
+			if (this.watch) this.watchItem(name);
+
+		} else {
+			return name;
+		}
+	}
+
+	return this.by_name[name];
+}
+
+RegistrarCache.prototype.watchItem = function(name) {
+	var self = this;
+	var filter = this.ro_eth.Registrar.Changed(name);
+	filter.watch(function(err, res) {
+		if (!err) {
+			var addr = self.by_name[res.args.name];
+			delete self.by_name[res.args.name];
+			delete self.by_addr[addr];
+		}
+	});
+	this.filters[name] = filter;
+}

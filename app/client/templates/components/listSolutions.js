@@ -18,6 +18,7 @@ template_this.helpers({
 	'solutions': function() {
 		var userdata = RoInst().userdata_mgr.get();
 		var sel = Session.get('listSolutions_data');
+		if (sel.job_owner == null) return [];
 		var word = userdata[sel.job_owner].jobs[sel.job_id].word;
 
 		// iterate all, find the solutions for the job we are interested in
