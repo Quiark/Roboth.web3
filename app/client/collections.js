@@ -35,7 +35,4 @@ new PersistentMinimongo(Accounts);
 	}
 
 */
-UserData = new Mongo.Collection();
-DictJobs = new Mongo.Collection();
-Solutions = new Mongo.Collection();
 

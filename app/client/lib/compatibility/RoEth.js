@@ -57,7 +57,7 @@ UserDataManager = function(RoEth) {
 UserDataManager.prototype.enableAutoUpdater = function() {
 	var self = this;
 	Deps.autorun(function() {
-		console.log('UserDataManager autoran');
+		//console.log('UserDataManager autoran');
 		self.autoUpdater();
 	});
 
@@ -109,12 +109,9 @@ UserDataManager.prototype.update = function() {
 				owner: user,
 				idx: dji
 			};
-			var _id = DictJobs.insert(job);
-			user_obj.jobs.push(_id);
 			mem_user_obj.jobs.push(job);
 		}
 
-		UserData.insert(user_obj);
 		xUserData[user] = mem_user_obj;
 	}
 
@@ -134,14 +131,8 @@ UserDataManager.prototype.update = function() {
 				desc: res[2]
 			};
 
-			sol.job_id = DictJobs.find({owner: sol.job_user, idx: sol.job_idx})._id;
-			var _id = Solutions.insert(sol);
-			sol_ids.push(_id);
 			xUserData[user].solutions.push(sol);
 		}
-
-		// update UserData
-		UserData.update({address: user}, {'$set': {solutions: sol_ids}});
 	}
 
 	// update UI
@@ -179,7 +170,7 @@ BlockchainUpdateTracker.prototype.onTick = function() {
 	this.last_block = block;
 
 	this.block_number.set(block);
-	console.log('Detected block number', block);
+	//console.log('Detected block number', block);
 }
 
 
