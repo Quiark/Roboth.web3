@@ -7,7 +7,9 @@ from overlog import ovlg, ovlocal
 
 class Store(object):
 	def __init__(self):
-		self.path = 'store.cpickle'
+		join = os.path.join
+		self.root = os.path.normpath( join(os.path.split(__file__)[0], '..') )
+		self.path = join(self.root, 'store.cpickle')
 		self.data = {
 			'contracts': list()
 		}
@@ -18,6 +20,7 @@ class Store(object):
 		self.data['contracts'].append(ci)
 
 	def last_ci(self):
+		if len(self.data['contracts']) == 0: return None
 		return self.data['contracts'][-1]
 
 	def load(self):
@@ -30,6 +33,9 @@ class Store(object):
 	def save(self):
 		with open(self.path, 'wcb') as outf:
 			cPickle.dump(self.data, outf, 2)
+
+	def in_root(self, pth):
+		return os.path.join(self.root, pth)
 
 
 class ContractInfo(object):

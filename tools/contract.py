@@ -1,9 +1,12 @@
 import os
 import sys
 import json
+import time
 import requests
 from pprint import pprint
 import subprocess
+import argparse
+from os.path import join
 
 # Required
 # https://github.com/ethereum/pyethereum
@@ -16,7 +19,7 @@ from overlog import ovlg, ovlocal
 
 from store import *
 
-ovlg().trace_except()
+#ovlg().trace_except()
 
 MainStore = Store()
 
@@ -29,8 +32,12 @@ def obj_hook(d):
 
 	return d
 
+def addr_noprefix(a):
+	if a.startswith('0x'): return a[2:]
+	else: return a
+
 RegistrarABI = json.loads('''[{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"name","outputs":[{"name":"o_name","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"content","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"reserve","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"subRegistrar","outputs":[{"name":"o_subRegistrar","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_newOwner","type":"address"}],"name":"transfer","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_registrar","type":"address"}],"name":"setSubRegistrar","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"Registrar","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_a","type":"address"},{"name":"_primary","type":"bool"}],"name":"setAddress","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_content","type":"bytes32"}],"name":"setContent","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"disown","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"register","outputs":[{"name":"","type":"address"}],"type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"}],"name":"Changed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"},{"indexed":true,"name":"addr","type":"address"}],"name":"PrimaryChanged","type":"event"}]''', object_hook=obj_hook)
-RegistrarAddr = "0xc6d9d2cd449a754c494264e1809c50e34d64562b"
+RegistrarAddr = "0x7baae5f7546381f59710b922f55110d9f8704b1d"
 
 transl = eabi.ContractTranslator(RegistrarABI)
 
@@ -71,8 +78,18 @@ class EthRpc(object):
 	def accounts(self):
 		return self._call('eth_accounts')
 
-eth = EthRpc('guardian', 8545)
-prim_acc = eth.accounts()[1]
+	def getTransactionReceipt(self, txhash):
+		return self._call('eth_getTransactionReceipt', [txhash])
+
+	def poll(self, call, args):
+		res = None
+		while res == None:
+			res = call(*args)
+			time.sleep(0.4)
+		return res
+
+eth = EthRpc('localhost', 8545)
+prim_acc = eth.accounts()[0]
 con_name = 'Roboth'
 
 def compile_internal(src, rpc=True):
@@ -108,7 +125,7 @@ def abi_to_ascii(abi):
 
 
 def compile():
-	compiled = compile_internal(open('../app/sol/{}.sol'.format(con_name)))
+	compiled = compile_internal(open(MainStore.in_root('app/sol/{}.sol'.format(con_name))))
 	ovlg().data('heres the compiled stuff', compiled)
 
 	code = compiled[con_name]['code']
@@ -123,9 +140,9 @@ def compile():
 def deploy(ci):
 	# actual deployment
 	res = eth.sendTransaction(data=ci.code, from_=prim_acc, gas=1800000)
-	ovlg().data( deployed_at=res )
-	if res.startswith('0x'): res = res[2:]
-	ci.addr = res
+	tx = eth.poll(eth.getTransactionReceipt, [res])
+	ovlg().data( tx=tx )
+	ci.addr = addr_noprefix(tx['contractAddress'])
 
 	# ok now deployed, save it
 	ci.register_with_store(MainStore)
@@ -145,7 +162,7 @@ def register(con_name, addr):
 	eth.sendTransaction(data=data, from_=prim_acc, to=RegistrarAddr)
 
 	# set address to latest deployment
-	data = transl.encode('setAddress', [con_name, addr, 1]).encode('hex')
+	data = transl.encode('setAddress', [con_name, str(addr), 1]).encode('hex')
 	eth.sendTransaction(data=data, from_=prim_acc, to=RegistrarAddr)
 
 
@@ -154,26 +171,54 @@ def add_testdata(ci):
 	gas = 400*1000
 
 	data = contract_api.encode('createJob', ['petty']).encode('hex')
-	eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas, value='100000000000000000')
+	recpt = eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas, value=str(10L**18))
 
 	data = contract_api.encode('createJob', ['Hello Kitty']).encode('hex')
-	eth.sendTransaction(data=data, from_=eth.accounts()[0], to=ci.addr, gas=gas, value='160000000000000000')
+	recpt = eth.sendTransaction(data=data, from_=eth.accounts()[0], to='0x' + ci.addr, gas=gas, value=str(2*10**18))
+
+	data = contract_api.encode('addSolution', ['stupid pink animal', addr_noprefix(prim_acc), 1]).encode('hex')
+	recpt = eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas)
 
 
 def write_abi(ci):
-	path = '../app/client/lib/compatibility/{}.abi.js'.format(ci.name)
+	path = MainStore.in_root('app/client/lib/compatibility/{}.abi.js'.format(ci.name))
 	with open(path, 'wc') as outf:
 		outf.write('window.{}ABI = {};'.format(ci.name, json.dumps(ci.abi)))
 
 
-try:
-	if True:
-		ci = MainStore.last_ci()
-	else:
-		ci = compile()
+def mine():
+	eth._call('miner_start', [1])
 
-	ci = deploy(ci)
-	write_abi(ci)
+def rest():
+	eth._call('miner_stop')
+
+
+def update_contract():
+	try:
+		ci = compile()
+		ci = deploy(ci)
+
+		write_abi(ci)
+		add_testdata(ci)
+	finally:
+		MainStore.save()
+
+
+def testdata():
+	ci = MainStore.last_ci()
 	add_testdata(ci)
-finally:
-	MainStore.save()
+
+
+ACTIONS = {
+	'up': update_contract,
+	'mine': mine,
+	'rest': rest,
+	'testdata': testdata
+
+}
+
+parser = argparse.ArgumentParser( description='Roboth.web3 deployment script' )
+parser.add_argument('mode', action='store', choices=ACTIONS.keys(), default='up')
+
+args = parser.parse_args()
+ACTIONS[args.mode]()

@@ -19,7 +19,19 @@
 					<tr>
 						<td>{{desc}}</td>
 						<td>{{regName author}}</td>
-						<td>&nbsp;</td>
+						<td>
+							<div class="sol_upvote btn btn-primary" 
+								data-sol-id="{{idx}}"
+								data-sol-user="{{author}}"
+								data-job-id="{{job_idx}}"
+								data-job-user="{{job_user}}">^</div>
+							{{votes}}
+							<div class="sol_downvote btn btn-warning"
+								data-sol-id="{{idx}}"
+								data-sol-user="{{author}}"
+								data-job-id="{{job_idx}}"
+								data-job-user="{{job_user}}">v</div>
+						</td>
 					</tr>
 				{{/each}}
 				</tbody>

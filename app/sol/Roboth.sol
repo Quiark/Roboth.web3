@@ -47,13 +47,16 @@ contract Roboth is mortal {
 		// TODO: support longer data, possibly using byte array?
 		bytes32 desc;
 
+		int32 votes;
+
 	}
 
 	struct UserData {
 		mapping (uint32 => DictJob) jobs;
-		uint32 next_jobid;
-
 		mapping (uint32 => Solution) solutions;
+
+		// pack them together
+		uint32 next_jobid;
 		uint32 next_solutionid;
 	}
 
@@ -61,9 +64,17 @@ contract Roboth is mortal {
 	mapping (uint32 => address) public m_userdata_idx;
 	uint32 public m_next_userid = 0;
 
+	// voter -> sol_user -> sol_id -> delta
+	// delta is +1 or -1 or 0 states up, down or no vote
+	// voter is the sender of transaction
+	// sol_user + sol_id is the id of solution
+	mapping (address => mapping(address => mapping(uint32 => int8))) public m_votes;
+
 
 	/// adds a word to translate
 	function createJob(bytes32 word) {
+		if (msg.value < 1 ether) return;   // must provide some reward
+
 		_ensureNewUser();
 		UserData usrdat = m_userdata[msg.sender];
 
@@ -84,7 +95,18 @@ contract Roboth is mortal {
 		usrdat.solutions[solid].desc = my_desc;
 		usrdat.solutions[solid].job_user = job_user;
 		usrdat.solutions[solid].job_id = job_id;
+		usrdat.solutions[solid].votes = 0;
 		usrdat.next_solutionid += 1;
+	}
+
+	function solUpDownVote(bool up, uint32 sol_id, address sol_user) {
+		int8 delta = 1;
+		if (up == false) delta = -1;
+
+		if (m_votes[msg.sender][sol_user][sol_id] == delta) return;
+
+		m_userdata[sol_user].solutions[sol_id].votes += delta;
+		m_votes[msg.sender][sol_user][sol_id] += delta;
 	}
 
 	// ======= Accessors
@@ -95,14 +117,18 @@ contract Roboth is mortal {
 		reward = j.reward;
 	}
 
-	function getSolution(address user, uint32 id) public constant returns (address job_user, uint32 job_id, bytes32 desc) {
+	function getSolution(address user, uint32 id) public constant returns (address job_user, uint32 job_id, bytes32 desc, int32 votes) {
 		Solution s = m_userdata[user].solutions[id];
 
 		job_user = s.job_user;
 		job_id = s.job_id;
 		desc = s.desc;
+		votes = s.votes;
 	}
 
+	function getVote(address voter, address sol_user, uint32 sol_id) returns (int8){
+		return m_votes[voter][sol_user][sol_id];
+	}
 
 	// ======= Internal State Management
 

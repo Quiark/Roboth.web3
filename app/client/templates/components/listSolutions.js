@@ -40,3 +40,31 @@ template_this.helpers({
 		return result;
 	}
 });
+
+function solutionUpDownVote(up, event, tpl) {
+	var btn = $(event.currentTarget);
+	var sol_id = btn.data('solId');
+	var sol_user = btn.data('solUser');
+	/*
+	var job_id = btn.data('jobId');
+	var job_user = btn.data('jobUser');
+	*/
+
+	if ((sol_id !== '') && sol_user && (job_id !== '') && job_user) {
+		Roboth.solUpDownVote.sendTransaction(up, sol_id, sol_user, {from: Helpers.selectedAcc(), gas: 100 * 1000});
+	} else {
+		// TODO report some error
+		console.error('something is null');
+	}
+
+};
+
+template_this.events({
+	'click .sol_upvote': function(event, tpl) {
+		solutionUpDownVote(true, event, tpl);
+	},
+	'click .sol_downvote': function(event, tpl) {
+		solutionUpDownVote(false, event, tpl);
+	}
+
+});

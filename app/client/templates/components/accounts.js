@@ -25,7 +25,7 @@ Meteor.startup(function () {
 		});
 	}
 
-	Session.set('selected_account', 2);
+	Session.set('selected_account', 1);
 });
 
 template_this.events({
