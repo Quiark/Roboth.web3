@@ -2,3 +2,4 @@
 .*.swp
 *.pyc
 tools/store.cpickle
+store.cpickle

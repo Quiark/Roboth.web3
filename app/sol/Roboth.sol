@@ -26,10 +26,17 @@ contract Roboth is mortal {
 	//		or for deleting words
 	//		may use a cache on server to keep track of what can be overwritten
 	// TODO: use shorter types for ids
+	// TODO: add payout, each user can invoke check for himlef
+	
+	const PAYOUT_BLOCKS = 10000;
+	const GAS_TX = 21000;
+	const GAS_PRICE = 60000000000;
+	const FEE_PAYOUT = GAS_TX * GAS_PRICE;
 
 	struct DictJob {
 		bytes32 word;
 		uint reward;
+		uint bl_payout;
 		//address owner;
 
 		// TODO: how to list solutions to this job?
@@ -81,6 +88,7 @@ contract Roboth is mortal {
 		uint32 jobid = usrdat.next_jobid;
 		usrdat.jobs[jobid].word = word;
 		usrdat.jobs[jobid].reward = msg.value - 100; // TODO fee
+		usrdat.jobs[jobid].bl_started = block.number + PAYOUT_BLOCKS;
 		usrdat.next_jobid += 1;
 
 
@@ -107,6 +115,19 @@ contract Roboth is mortal {
 
 		m_userdata[sol_user].solutions[sol_id].votes += delta;
 		m_votes[msg.sender][sol_user][sol_id] += delta;
+	}
+
+	// WIP / unfinished
+	function checkPayout(uint32 sol_id) {
+		Solution sol = m_userdata[msg.sender].solutions[sol_id];
+		DictJob job = m_userdata[sol.job_user].jobs[sol.job_id];
+		if (block.number < job.bl_payout) return;
+
+		if (job.reward > 0) {
+			msg.sender.send(job.reward - FEE_PAYOUT);
+
+			job.reward = 0;
+		}
 	}
 
 	// ======= Accessors
