@@ -24,17 +24,14 @@ template_this.helpers({
 		// iterate all, find the solutions for the job we are interested in
 		var result = [];
 
-		for (var k in userdata) {
-			for (var s_id = 0; s_id < userdata[k].solutions.length; s_id++) {
-				var s = userdata[k].solutions[s_id];
+		for (var s_id = 0; s_id < in userdata[sel.job_owner].solutions.length; s_id++) {
+			var s = userdata[sel.job_owner].solutions[s_id];
 
-				if ((s.job_user == sel.job_owner) && (s.job_idx.equals(sel.job_id))) {
-					var extended = _.clone(s);
-					extended.author = k;
-					result.push(extended);
-				}
+			if (s.job_idx.equals(sel.job_id)) {
+				var extended = _.clone(s);
+				extended.author = k;
+				result.push(extended);
 			}
-
 		}
 
 		return result;

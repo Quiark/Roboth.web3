@@ -47,19 +47,23 @@ contract Roboth is mortal {
 	}
 
 	struct Solution {
-		// identifier of the DictJob
-		address job_user;
-		uint32 job_id;
+		address author;
 
 		// TODO: support longer data, possibly using byte array?
 		bytes32 desc;
 
 		int32 votes;
 
+        // so the solution is in an array in userdata together with
+        // the jobs from that user. This is index in that array.
+        uint32 job_id;
 	}
 
 	struct UserData {
+        // the jobs current user has created
 		mapping (uint32 => DictJob) jobs;
+
+        // the solutions to jobs of this user (all jobs together)
 		mapping (uint32 => Solution) solutions;
 
 		// pack them together
@@ -96,25 +100,28 @@ contract Roboth is mortal {
 	}
 
 	function addSolution(bytes32 my_desc, address job_user, uint32 job_id) {
-		_ensureNewUser();
-		UserData usrdat = m_userdata[msg.sender];
+		UserData usrdat = m_userdata[job_user];
+        if (usrdat.next_jobid <= job_id) {
+            // the job does not exist, maybe the whole 'usrdat' doesn't exist
+            return;
+        }
 
 		uint32 solid = usrdat.next_solutionid;
 		usrdat.solutions[solid].desc = my_desc;
-		usrdat.solutions[solid].job_user = job_user;
+		usrdat.solutions[solid].author = msg.sender;
 		usrdat.solutions[solid].job_id = job_id;
 		usrdat.solutions[solid].votes = 0;
 		usrdat.next_solutionid += 1;
 	}
 
-	function solUpDownVote(bool up, uint32 sol_id, address sol_user) {
+	function solUpDownVote(bool up, uint32 sol_id, address job_user) {
 		int8 delta = 1;
 		if (up == false) delta = -1;
 
-		if (m_votes[msg.sender][sol_user][sol_id] == delta) return;
+		if (m_votes[msg.sender][job_user][sol_id] == delta) return;
 
-		m_userdata[sol_user].solutions[sol_id].votes += delta;
-		m_votes[msg.sender][sol_user][sol_id] += delta;
+		m_userdata[job_user].solutions[sol_id].votes += delta;
+		m_votes[msg.sender][job_user][sol_id] += delta;
 	}
 
 	// WIP / unfinished
@@ -138,10 +145,10 @@ contract Roboth is mortal {
 		reward = j.reward;
 	}
 
-	function getSolution(address user, uint32 id) public constant returns (address job_user, uint32 job_id, bytes32 desc, int32 votes) {
+	function getSolution(address user, uint32 id) public constant returns (address author, uint32 job_id, bytes32 desc, int32 votes) {
 		Solution s = m_userdata[user].solutions[id];
 
-		job_user = s.job_user;
+		author = s.author;
 		job_id = s.job_id;
 		desc = s.desc;
 		votes = s.votes;
@@ -155,10 +162,11 @@ contract Roboth is mortal {
 
 	function _isNewUser() private returns (bool) {
 		UserData usrdat = m_userdata[msg.sender];
+        // NEVER: (usrdat.next_solutionid > 0 && (usrdat.next_jobid == 0)
 
 		// is new user when next_jobid or next_solutionid is nonzero
 		// because any write to that struct would increase these numbers
-		if ((usrdat.next_solutionid > 0) || (usrdat.next_jobid > 0)) {
+		if (usrdat.next_jobid > 0) {
 			return false;
 		} else {
 			return true;
