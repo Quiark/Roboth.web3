@@ -17,4 +17,6 @@ nmenu Plugin.Ethere&um.&Mine :Ethereum mine<CR>
 nmenu Plugin.Ethere&um.&Rest :Ethereum rest<CR>
 nmenu Plugin.Ethere&um.&Up :EthereumC up<CR>
 
+compiler python
+
 VimFilerExplorer

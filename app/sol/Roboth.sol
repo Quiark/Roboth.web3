@@ -28,10 +28,11 @@ contract Roboth is mortal {
 	// TODO: use shorter types for ids
 	// TODO: add payout, each user can invoke check for himlef
 	
-	const PAYOUT_BLOCKS = 10000;
-	const GAS_TX = 21000;
-	const GAS_PRICE = 60000000000;
-	const FEE_PAYOUT = GAS_TX * GAS_PRICE;
+	// TODO: must be smaller for dev
+	uint256 PAYOUT_BLOCKS = 10000;
+	uint256 GAS_TX = 21000;
+	uint256 GAS_PRICE = 60000000000;
+	uint256 FEE_PAYOUT = GAS_TX * GAS_PRICE;
 
 	struct DictJob {
 		bytes32 word;
@@ -92,7 +93,7 @@ contract Roboth is mortal {
 		uint32 jobid = usrdat.next_jobid;
 		usrdat.jobs[jobid].word = word;
 		usrdat.jobs[jobid].reward = msg.value - 100; // TODO fee
-		usrdat.jobs[jobid].bl_started = block.number + PAYOUT_BLOCKS;
+		usrdat.jobs[jobid].bl_payout = block.number + PAYOUT_BLOCKS;
 		usrdat.next_jobid += 1;
 
 
@@ -125,11 +126,23 @@ contract Roboth is mortal {
 	}
 
 	// WIP / unfinished
-	function checkPayout(uint32 sol_id) {
-		Solution sol = m_userdata[msg.sender].solutions[sol_id];
-		DictJob job = m_userdata[sol.job_user].jobs[sol.job_id];
-		if (block.number < job.bl_payout) return;
+	// TODO: before payout, I can check the balance of all upvoters and downvoters that it's nontrivial and thus they are not zombie accounts
+	function checkPayout(address job_user, uint32 sol_id) returns (bool) {
+		UserData usrdata = m_userdata[job_user];
+		Solution this_sol = usrdata.solutions[sol_id];
+		var this_job_id = this_sol.job_id;
+		if (block.number < usrdata.jobs[this_job_id].bl_payout) return false;
 
+		var this_votes = this_sol.votes;
+		for (var i = 0; i < usrdata.next_solutionid; i++) {
+			// different job of the same user
+			if (usrdata.solutions[i].job_id != this_job_id) continue;
+
+			if (usrdata.solutions[i].votes > this_votes) return false;
+		}
+
+		// ok, I'm eligible!
+		var job = usrdata.jobs[this_job_id];
 		if (job.reward > 0) {
 			msg.sender.send(job.reward - FEE_PAYOUT);
 

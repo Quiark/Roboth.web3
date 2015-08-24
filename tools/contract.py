@@ -36,9 +36,20 @@ def addr_noprefix(a):
 	if a.startswith('0x'): return a[2:]
 	else: return a
 
+
+# configuration globals
 RegistrarABI = json.loads('''[{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"name","outputs":[{"name":"o_name","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"content","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"reserve","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"subRegistrar","outputs":[{"name":"o_subRegistrar","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_newOwner","type":"address"}],"name":"transfer","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_registrar","type":"address"}],"name":"setSubRegistrar","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"Registrar","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_a","type":"address"},{"name":"_primary","type":"bool"}],"name":"setAddress","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_content","type":"bytes32"}],"name":"setContent","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"disown","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"register","outputs":[{"name":"","type":"address"}],"type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"}],"name":"Changed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"},{"indexed":true,"name":"addr","type":"address"}],"name":"PrimaryChanged","type":"event"}]''', object_hook=obj_hook)
 RegistrarAddr = "0x7baae5f7546381f59710b922f55110d9f8704b1d"
+Solc = r'..\AlethZero\Release\solc.exe'
+CompileOverRpc = False
+RpcHost = ('localhost', 8545)
+ConName = 'Roboth'
 
+if True:
+	RegistrarAddr = '0xd6f084ee15e38c4f7e091f8dd0fe6fe4a0e203ef'
+
+
+# for Registrar
 transl = eabi.ContractTranslator(RegistrarABI)
 
 class EthRpc(object):
@@ -57,19 +68,24 @@ class EthRpc(object):
 			'id': _id
 		})
 		response = None
+		ovlg().data('RPC _call', method=method, params=params, data=data)
 		try:
 			response = requests.post("http://{}:{}".format(self.host, self.port), data=data).json()
 			return response['result']
 		except:
+			ovlocal()
 			print response
 			raise
 
 	def sendTransaction(self, **kwargs):
 		for k in kwargs.keys():
+			if isinstance(kwargs[k], int):
+				kwargs[k] = str(kwargs[k])
 			if k.endswith('_'):
 				v = kwargs[k]
 				del kwargs[k]
 				kwargs[k.rstrip('_')] = v
+
 
 		ovlocal()
 
@@ -88,11 +104,11 @@ class EthRpc(object):
 			time.sleep(0.4)
 		return res
 
-eth = EthRpc('localhost', 8545)
-prim_acc = eth.accounts()[0]
-con_name = 'Roboth'
 
-def compile_internal(src, rpc=True):
+eth = EthRpc(*RpcHost)
+prim_acc = eth.accounts()[0]
+
+def compile_internal(src, rpc=CompileOverRpc):
 	if isinstance(src, file):
 		src = src.read()
 
@@ -101,7 +117,7 @@ def compile_internal(src, rpc=True):
 		return res
 
 	else:
-		p = subprocess.Popen("plink root@guardian docker exec -i thirsty_lovelace solc --combined-json 'binary,json-abi'", shell=True,
+		p = subprocess.Popen([Solc, '--combined-json', 'binary,json-abi'], shell=False,
 						stdin=subprocess.PIPE,
 						stdout=subprocess.PIPE,
 						stderr=subprocess.PIPE)
@@ -110,7 +126,15 @@ def compile_internal(src, rpc=True):
 		#print stdout
 		print 'ERR'
 		print stderr
-		return json.loads(stdout)
+		js = json.loads(stdout)
+		return {
+			ConName: {
+				'code': js['contracts'][ConName]['binary'],
+				'info': {
+					'abiDefinition': json.loads(js['contracts'][ConName]['json-abi'])
+				}
+			}
+		}
 
 
 def abi_to_ascii(abi):
@@ -125,16 +149,16 @@ def abi_to_ascii(abi):
 
 
 def compile():
-	compiled = compile_internal(open(MainStore.in_root('app/sol/{}.sol'.format(con_name))))
+	compiled = compile_internal(open(MainStore.in_root('app/sol/{}.sol'.format(ConName))))
 	ovlg().data('heres the compiled stuff', compiled)
 
-	code = compiled[con_name]['code']
-	abi = abi_to_ascii(compiled[con_name]['info']['abiDefinition'])
+	code = compiled[ConName]['code']
+	abi = abi_to_ascii(compiled[ConName]['info']['abiDefinition'])
 
 	ovlg().data(code, abi)
 	print '---- ABI ---- %< ----'
 	print json.dumps(abi, indent=None)
-	return ContractInfo(abi=abi, code=code, name=con_name)
+	return ContractInfo(abi=abi, code=code, name=ConName)
 
 
 def deploy(ci):
@@ -150,21 +174,24 @@ def deploy(ci):
 	print '---- ADDR ---- %< ----'
 	print ci.addr
 
-	register(con_name, ci.addr)
+	register(ConName, ci.addr)
 
-	print 'Registered as ', con_name
+	print 'Registered as ', ConName
 	return ci
 
 
-def register(con_name, addr):
+def register(con_name, addr, from_=prim_acc):
 	# reserve the name first using primary account
 	data = transl.encode('reserve', [con_name]).encode('hex')
-	eth.sendTransaction(data=data, from_=prim_acc, to=RegistrarAddr)
+	eth.sendTransaction(data=data, from_=from_, to=RegistrarAddr, gas=10000 * 190)
 
 	# set address to latest deployment
-	data = transl.encode('setAddress', [con_name, str(addr), 1]).encode('hex')
-	eth.sendTransaction(data=data, from_=prim_acc, to=RegistrarAddr)
+	data = transl.encode('setAddress', [con_name, str(addr), True]).encode('hex')
+	eth.sendTransaction(data=data, from_=from_, to=RegistrarAddr, gas=10000 * 190)
 
+def name_accounts():
+	register('Golemus', addr_noprefix(eth.accounts()[0]), eth.accounts()[0])
+	register('Pepa Stark', addr_noprefix(eth.accounts()[1]), eth.accounts()[1])
 
 def add_testdata(ci):
 	contract_api = eabi.ContractTranslator(ci.abi)
@@ -178,6 +205,11 @@ def add_testdata(ci):
 
 	data = contract_api.encode('addSolution', ['stupid pink animal', addr_noprefix(prim_acc), 1]).encode('hex')
 	recpt = eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas)
+
+
+def registrar_get_addr(name):
+	data = transl.encode('addr', [name]).encode('hex')
+	return eth._call('eth_call', [{'data': data, 'to': RegistrarAddr}, 'latest'])
 
 
 def write_abi(ci):
@@ -209,16 +241,22 @@ def testdata():
 	add_testdata(ci)
 
 
+def cmd_deploy():
+	ci = compile()
+	ci = deploy(ci)
+
+
 ACTIONS = {
 	'up': update_contract,
 	'mine': mine,
 	'rest': rest,
-	'testdata': testdata
-
+	'testdata': testdata,
+	'deploy': cmd_deploy
 }
 
-parser = argparse.ArgumentParser( description='Roboth.web3 deployment script' )
-parser.add_argument('mode', action='store', choices=ACTIONS.keys(), default='up')
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser( description='Roboth.web3 deployment script' )
+	parser.add_argument('mode', action='store', choices=ACTIONS.keys(), default='up')
 
-args = parser.parse_args()
-ACTIONS[args.mode]()
+	args = parser.parse_args()
+	ACTIONS[args.mode]()

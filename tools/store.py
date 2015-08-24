@@ -23,6 +23,12 @@ class Store(object):
 		if len(self.data['contracts']) == 0: return None
 		return self.data['contracts'][-1]
 
+	def last_ci_named(self, name):
+		for ix in range(len(self.data['contracts']), 0, -1):
+			ci = self.data['contracts'][ix - 1]
+			if ci.name == name: return ci
+		raise KeyError('in last_ci_named, no', name)
+
 	def load(self):
 		if not os.path.exists(self.path): return
 		with open(self.path, 'rb') as inf:
