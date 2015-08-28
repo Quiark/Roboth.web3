@@ -18,7 +18,21 @@ contract mortal is owned {
 }
 
 
-contract Roboth is mortal {
+// use this for debugging
+contract Logger {
+	event Log0(string msg);
+	event Log1(string msg, uint256 a);
+	event Log2(string msg, uint256 a, uint256 b);
+}
+
+// disable for release
+contract NoLogger {
+	function Log0(string msg) {}
+	function Log1(string msg, uint256 a) {}
+	function Log2(string msg, uint256 a, uint256 b) {}
+}
+
+contract Roboth is mortal, NoLogger {
 	// TODO: consider fees when sending rewards
 	// TODO: break it into more contracts when useful
 	// TODO: rename this to DictRoboth
@@ -29,10 +43,11 @@ contract Roboth is mortal {
 	// TODO: add payout, each user can invoke check for himlef
 	
 	// TODO: must be smaller for dev
-	uint256 PAYOUT_BLOCKS = 10000;
-	uint256 GAS_TX = 21000;
-	uint256 GAS_PRICE = 60000000000;
-	uint256 FEE_PAYOUT = GAS_TX * GAS_PRICE;
+	uint256 public PAYOUT_BLOCKS = 10000;
+	uint256 public GAS_TX = 21000;
+	uint256 public GAS_PRICE = 60000000000;
+	uint256 public FEE_PAYOUT = GAS_TX * GAS_PRICE;
+
 
 	struct DictJob {
 		bytes32 word;
@@ -125,37 +140,52 @@ contract Roboth is mortal {
 		m_votes[msg.sender][job_user][sol_id] += delta;
 	}
 
-	// WIP / unfinished
 	// TODO: before payout, I can check the balance of all upvoters and downvoters that it's nontrivial and thus they are not zombie accounts
 	function checkPayout(address job_user, uint32 sol_id) returns (bool) {
+		Log0("checkPayout STARTED");
 		UserData usrdata = m_userdata[job_user];
 		Solution this_sol = usrdata.solutions[sol_id];
 		var this_job_id = this_sol.job_id;
+		Log2("da fuck block is ", usrdata.jobs[this_job_id].bl_payout, block.number);
 		if (block.number < usrdata.jobs[this_job_id].bl_payout) return false;
+
+		Log0("block OK");
 
 		var this_votes = this_sol.votes;
 		for (var i = 0; i < usrdata.next_solutionid; i++) {
+			bool _small = usrdata.solutions[i].votes < 0;
+			uint256 _val = 1;
+			if (_small == false) _val = 0;
+			Log2("Looking at sol {0} is < 0", i, _val);
+
 			// different job of the same user
 			if (usrdata.solutions[i].job_id != this_job_id) continue;
 
-			if (usrdata.solutions[i].votes > this_votes) return false;
+			if (usrdata.solutions[i].votes > this_votes) {
+				Log2("solution {0} has more votes {1}", i, uint256(usrdata.solutions[i].votes));
+				return false;
+			}
 		}
 
 		// ok, I'm eligible!
 		var job = usrdata.jobs[this_job_id];
 		if (job.reward > 0) {
-			msg.sender.send(job.reward - FEE_PAYOUT);
+			Log0("OK, paying out");
+			this_sol.author.send(job.reward - FEE_PAYOUT);
 
 			job.reward = 0;
+			return true;
 		}
+		return false;
 	}
 
 	// ======= Accessors
-	function getDictJob(address user, uint32 id) public constant returns (bytes32 word, uint reward) {
+	function getDictJob(address user, uint32 id) public constant returns (bytes32 word, uint reward, uint256 bl_payout) {
 		DictJob j = m_userdata[user].jobs[id];
 
 		word = j.word;
 		reward = j.reward;
+		bl_payout = j.bl_payout;
 	}
 
 	function getSolution(address user, uint32 id) public constant returns (address author, uint32 job_id, bytes32 desc, int32 votes) {
@@ -196,5 +226,14 @@ contract Roboth is mortal {
 		} else {
 			return isnew;
 		}
+	}
+
+	// ============= Internal administration
+	function _setPayoutBlocks(uint256 val) onlyowner {
+		PAYOUT_BLOCKS = val;
+	}
+
+	function _setGasPrice(uint256 val) onlyowner {
+		GAS_PRICE = val;
 	}
 }

@@ -32,10 +32,14 @@ def obj_hook(d):
 
 	return d
 
+
 def addr_noprefix(a):
 	if a.startswith('0x'): return a[2:]
 	else: return a
 
+
+def no0_suffix(s):
+	return s.rstrip('\x00')
 
 # configuration globals
 RegistrarABI = json.loads('''[{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"name","outputs":[{"name":"o_name","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"content","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"reserve","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"subRegistrar","outputs":[{"name":"o_subRegistrar","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_newOwner","type":"address"}],"name":"transfer","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_registrar","type":"address"}],"name":"setSubRegistrar","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"Registrar","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_a","type":"address"},{"name":"_primary","type":"bool"}],"name":"setAddress","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_content","type":"bytes32"}],"name":"setContent","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"disown","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"register","outputs":[{"name":"","type":"address"}],"type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"}],"name":"Changed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"},{"indexed":true,"name":"addr","type":"address"}],"name":"PrimaryChanged","type":"event"}]''', object_hook=obj_hook)
@@ -46,8 +50,7 @@ RpcHost = ('localhost', 8545)
 ConName = 'Roboth'
 
 if True:
-	RegistrarAddr = '0xd6f084ee15e38c4f7e091f8dd0fe6fe4a0e203ef'
-
+	RegistrarAddr = '0x66548b4ad6d6be74bc2dbb53ef8c4df0f7b671b3'
 
 # for Registrar
 transl = eabi.ContractTranslator(RegistrarABI)
@@ -176,7 +179,7 @@ def deploy(ci):
 
 	register(ConName, ci.addr)
 
-	print 'Registered as ', ConName
+	print 'Registered as ', ConName, ' deployed from', prim_acc
 	return ci
 
 
@@ -245,13 +248,20 @@ def cmd_deploy():
 	ci = compile()
 	ci = deploy(ci)
 
+def cmd_init():
+	ConName = 'GlobalRegistrar'
+	ci = compile()
+	ci = deploy(ci)
+	print 'Registrar at', ci.addr
+
 
 ACTIONS = {
 	'up': update_contract,
 	'mine': mine,
 	'rest': rest,
 	'testdata': testdata,
-	'deploy': cmd_deploy
+	'deploy': cmd_deploy,
+	'init': cmd_init
 }
 
 if __name__ == '__main__':
