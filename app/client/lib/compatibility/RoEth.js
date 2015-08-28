@@ -10,7 +10,7 @@ function RoEthCls() {
 	this. RegistrarAddr = "0x7baae5f7546381f59710b922f55110d9f8704b1d";
 	if (true) {
 		// test-rpc env
-		this.RegistrarAddr = '0xd6f084ee15e38c4f7e091f8dd0fe6fe4a0e203ef';
+		this.RegistrarAddr = '0x19eaa2d242cace5754f1dcc3cf94d7a692dd8de2';
 	}
 
 	this. RegistrarAPI = web3.eth.contract(this.RegistrarABI);
@@ -48,6 +48,7 @@ RoEthCls.instance = function() {
 /**  For results of contract calls */
 RoEthCls.isNull = function(res) {
 	if ((res == '') || (res == null) || (res == undefined)) return true;
+	if (_.isString(res) && res.codePointAt(0) == 0) return true;
 	if (new BigNumber(res).equals(0)) return true;
 	return false;
 }
@@ -209,20 +210,25 @@ RegistrarCache = function(ro_eth, watch) {
 	this.filters = {};
 }
 
+RegistrarCache.prototype.readableAddr = function(addr) {
+	return addr.substr(0, 4 + 2) + ' ' + addr.substr(2 + 4, 4) + '...';
+}
+
 RegistrarCache.prototype.regName = function(addr) {
 	if (RoEthCls.isNull(addr)) return '0x00';
 
 	if (! this.by_addr[addr]) {
 		var fnd = this.ro_eth.Registrar.name(addr);
 
-		if (fnd != '') {
+		if (! RoEthCls.isNull(fnd)) {
 			this.by_addr[addr] = fnd;
 			this.by_name[this.by_addr[addr]] = addr;
 
 			if (this.watch) this.watchItem(this.by_addr[addr]);
 
+			return fnd;
 		} else {
-			return addr;
+			return this.readableAddr(addr);
 		}
 	}
 	return this.by_addr[addr];
@@ -237,9 +243,10 @@ RegistrarCache.prototype.regAddr = function(name) {
 			this.by_addr[this.by_name[name]] = name;
 
 			if (this.watch) this.watchItem(name);
+			return fnd;
 
 		} else {
-			return name;
+			return null;
 		}
 	}
 

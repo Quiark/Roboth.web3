@@ -16,6 +16,8 @@ command! -nargs=1 EthereumC cexpr system('python tools\\contract.py <args>')
 nmenu Plugin.Ethere&um.&Mine :Ethereum mine<CR>
 nmenu Plugin.Ethere&um.&Rest :Ethereum rest<CR>
 nmenu Plugin.Ethere&um.&Up :EthereumC up<CR>
+nmenu Plugin.Ethere&um.&Init :EthereumC init<CR>
+nmenu Plugin.Ethere&um.&Testdata :EthereumC testdata<CR>
 
 compiler python
 
