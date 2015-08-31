@@ -1,0 +1,29 @@
+<template name="components_listMySolutions">
+    <div class="panel panel-default panel-dapp">
+        <div class="panel-heading">My Solutions</div>
+        <div class="panel-body">
+			{{flash 'payout'}}
+			<table class="table table-bordered">
+                <thead><tr>
+                        <td>job</td>
+                        <td>solution</td>
+						<td>ops</td>
+                </tr></thead>
+				<tbody>
+				{{#each solutions}}
+					<tr>
+						<td>{{job_word}}</td>
+						<td>{{desc}}</td>
+						<td>
+							<div class="btn btn-default sol_check_payout"
+								data-sol-id="{{idx}}"
+								data-job-user="{{job_user}}"
+								>Check payout</div>
+						</td>
+					</tr>
+				{{/each}}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</template>

@@ -8,7 +8,7 @@ named RoEth for a lack of imagination
 function RoEthCls() {
 	this. RegistrarABI = [{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"name","outputs":[{"name":"o_name","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"content","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"reserve","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"subRegistrar","outputs":[{"name":"o_subRegistrar","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_newOwner","type":"address"}],"name":"transfer","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_registrar","type":"address"}],"name":"setSubRegistrar","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"Registrar","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_a","type":"address"},{"name":"_primary","type":"bool"}],"name":"setAddress","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_content","type":"bytes32"}],"name":"setContent","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"disown","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"register","outputs":[{"name":"","type":"address"}],"type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"}],"name":"Changed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"},{"indexed":true,"name":"addr","type":"address"}],"name":"PrimaryChanged","type":"event"}];
 	this. RegistrarAddr = "0x7baae5f7546381f59710b922f55110d9f8704b1d";
-	if (true) {
+	if (false) {
 		// test-rpc env
 		this.RegistrarAddr = '0x19eaa2d242cace5754f1dcc3cf94d7a692dd8de2';
 	}
@@ -68,6 +68,7 @@ to the templates in a reactive way.
 
 UserDataManager = function(RoEth) {
 	this.react_var = new ReactiveVar();
+	this.mysol_react_var = new ReactiveVar();
 	this.dirty = true;
 	this.ro_eth = RoEth;
 
@@ -105,6 +106,7 @@ UserDataManager.prototype.get = function() {
 
 UserDataManager.prototype.update = function() {
 	var xUserData = {};
+	var xMySol = [];
 
 	for (var i = 0; i < Roboth.m_next_userid().toFixed(); i++) {
 		var user = Roboth.m_userdata_idx(i)
@@ -144,16 +146,22 @@ UserDataManager.prototype.update = function() {
 				idx: si,
 
 				desc: web3.toAscii(res[2]),
-				votes: res[3]
+				votes: res[3],
+				job_word: xUserData[user].jobs[res[1].toFixed()].word
 			};
 
 			xUserData[user].solutions.push(sol);
+			if (sol.author == Helpers.selectedAcc()) {
+				xMySol.push(sol);
+			}
 		}
 	}
 
 	// update UI
 	this.dirty = false;
 	this.react_var.set(xUserData);
+	this.mysol_react_var.set(xMySol);
+
 	console.log('updated to', xUserData);
 }
 
