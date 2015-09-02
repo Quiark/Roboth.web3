@@ -39,8 +39,6 @@ contract Roboth is mortal, NoLogger {
 	//		or for deleting words
 	//		may use a cache on server to keep track of what can be overwritten
 	
-	// TODO: must be smaller for dev
-	uint256 public PAYOUT_BLOCKS = 10000;
 	uint256 public GAS_TX = 21000;
 	uint256 public GAS_PRICE = 60000000000;
 	uint256 public FEE_PAYOUT = GAS_TX * GAS_PRICE;
@@ -96,7 +94,7 @@ contract Roboth is mortal, NoLogger {
 
 
 	/// adds a word to translate
-	function createJob(bytes32 word) {
+	function createJob(bytes32 word, uint256 bl_duration) {
 		if (msg.value < 1 ether) return;   // must provide some reward
 
 		_ensureNewUser();
@@ -105,7 +103,7 @@ contract Roboth is mortal, NoLogger {
 		uint32 jobid = usrdat.next_jobid;
 		usrdat.jobs[jobid].word = word;
 		usrdat.jobs[jobid].reward = msg.value;
-		usrdat.jobs[jobid].bl_payout = block.number + PAYOUT_BLOCKS;
+		usrdat.jobs[jobid].bl_payout = block.number + bl_duration;
 		usrdat.next_jobid += 1;
 
 
@@ -131,6 +129,9 @@ contract Roboth is mortal, NoLogger {
 		int8 delta = 1;
 		if (up == false) delta = -1;
 
+        // anti-ghost measures, each voting account must have at least 100 ether
+        if (msg.sender.balance < 100 ether) return;
+
 		if (m_votes[msg.sender][job_user][sol_id] == delta) return;
 
 		m_userdata[job_user].solutions[sol_id].votes += delta;
@@ -139,27 +140,17 @@ contract Roboth is mortal, NoLogger {
 
 	// TODO: before payout, I can check the balance of all upvoters and downvoters that it's nontrivial and thus they are not zombie accounts
 	function checkPayout(address job_user, uint32 sol_id) returns (bool) {
-		Log0("checkPayout STARTED");
 		UserData usrdata = m_userdata[job_user];
 		Solution this_sol = usrdata.solutions[sol_id];
 		var this_job_id = this_sol.job_id;
-		Log2("da fuck block is ", usrdata.jobs[this_job_id].bl_payout, block.number);
 		if (block.number < usrdata.jobs[this_job_id].bl_payout) return false;
-
-		Log0("block OK");
 
 		var this_votes = this_sol.votes;
 		for (var i = 0; i < usrdata.next_solutionid; i++) {
-			bool _small = usrdata.solutions[i].votes < 0;
-			uint256 _val = 1;
-			if (_small == false) _val = 0;
-			Log2("Looking at sol {0} is < 0", i, _val);
-
 			// different job of the same user
 			if (usrdata.solutions[i].job_id != this_job_id) continue;
 
 			if (usrdata.solutions[i].votes > this_votes) {
-				Log2("solution {0} has more votes {1}", i, uint256(usrdata.solutions[i].votes));
 				return false;
 			}
 		}
@@ -167,7 +158,6 @@ contract Roboth is mortal, NoLogger {
 		// ok, I'm eligible!
 		var job = usrdata.jobs[this_job_id];
 		if (job.reward > 0) {
-			Log0("OK, paying out");
 			this_sol.author.send(job.reward - FEE_PAYOUT);
 
 			job.reward = 0;
@@ -226,10 +216,6 @@ contract Roboth is mortal, NoLogger {
 	}
 
 	// ============= Internal administration
-	function _setPayoutBlocks(uint256 val) onlyowner {
-		PAYOUT_BLOCKS = val;
-	}
-
 	function _setGasPrice(uint256 val) onlyowner {
 		GAS_PRICE = val;
 	}

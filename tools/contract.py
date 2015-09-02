@@ -200,10 +200,10 @@ def add_testdata(ci):
 	contract_api = eabi.ContractTranslator(ci.abi)
 	gas = 400*1000
 
-	data = contract_api.encode('createJob', ['petty']).encode('hex')
+	data = contract_api.encode('createJob', ['petty', 100]).encode('hex')
 	recpt = eth.sendTransaction(data=data, from_=prim_acc, to=ci.addr, gas=gas, value=str(10L**18))
 
-	data = contract_api.encode('createJob', ['Hello Kitty']).encode('hex')
+	data = contract_api.encode('createJob', ['Hello Kitty', 15]).encode('hex')
 	recpt = eth.sendTransaction(data=data, from_=eth.accounts()[0], to='0x' + ci.addr, gas=gas, value=str(2*10**18))
 
 	data = contract_api.encode('addSolution', ['stupid pink animal', addr_noprefix(prim_acc), 1]).encode('hex')

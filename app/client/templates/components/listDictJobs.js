@@ -9,10 +9,11 @@ Meteor.startup(function() {
 function select_job(btn, varname) {
     var job = RoInst().userdata_mgr.get()[btn.data('owner')].jobs[btn.data('jobId')];
     Session.set(varname + '_data', {
-        idx: btn.data('jobId'),
-        word_owner: btn.data('owner'),
+        //idx: btn.data('jobId'),
+        //word_owner: btn.data('owner'),
         word: job.word,
-        reward: job.reward
+        reward: job.reward,
+        job_guid: ObjGuid.from_str(btn.data('job_guid'))
     });
 
 }

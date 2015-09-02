@@ -57,9 +57,29 @@ RoEthCls.isNull = function(res) {
 window.RoEthCls = RoEthCls;
 window.RoInst = RoEthCls.instance;
 
+ObjGuid = function(user_, ix_, contract_) {
+    this.user = user_;
+    this.ix = ix_;
+    this.contract = contract_;
+}
+
+ObjGuid.prototype.to_str = function() {
+    return this.user + ':' + this.ix + ':' + this.contract;
+}
+
+ObjGuid.from_str = function(s) {
+    return new ObjGuid.call(s.split(':'));
+}
+
+/* for UserDataManager
+
+    guid: new ObjGuid(user, dji, contract)
+
+*/
+
 /**
 Currently the primary data structure in the contract is UserData which is a mapping of each
-user's jobs and proposed solutions to other jobs.
+user's jobs and proposed solutions to his jobs.
 This class takes care of updating that data structure from the blockchain and providing it
 to the templates in a reactive way.
 
