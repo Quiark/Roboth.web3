@@ -5,7 +5,8 @@ Meteor.startup(function() {
 		word: null,
 		word_owner: null,
 		reward: null,
-		idx: null
+		idx: null,
+        job_guid: null
 	});
 
 	Session.set('createSolution_visible', false);
@@ -19,9 +20,7 @@ template_this.events({
 		var solution = tpl.$('#iSolution').val();
 
 		Roboth.addSolution(solution, data.word_owner, data.idx, {from: Helpers.selectedAcc(), gas: 400 * 1000});
-
-		// TODO: user feedback
-
+		RoEthCls.instance().userdata_mgr.setDirty();
 	}
 
 });

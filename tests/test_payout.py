@@ -59,10 +59,6 @@ def eth_snapshot():
 	eth.make_rpc_request('evm_revert', [orig_snap_id])
 
 
-def set_payout(bl=1):
-	cobj._setPayoutBlocks.sendTransaction(bl,
-									_from=eth.accounts[0],
-									gas=50*1000);
 
 def test_Roboth_basic(eth_snapshot):
 	acc_job_author = eth.accounts[0]
@@ -70,9 +66,7 @@ def test_Roboth_basic(eth_snapshot):
 	wrd = 'tresinka'
 	sol1 = 'kulata cervena vec'
 
-	set_payout(1)
-
-	cobj.createJob.sendTransaction(wrd,
+	cobj.createJob.sendTransaction(wrd, 1,
 									_from=acc_job_author,
 									gas=400*1000,
 									value=10**18)
@@ -111,7 +105,7 @@ def test_Roboth_basic(eth_snapshot):
 
 
 def make_job(job):
-	cobj.createJob.sendTransaction(job.wrd,
+	cobj.createJob.sendTransaction(job.wrd, 1,
 									_from=job.author,
 									gas=400*1000,
 									value=10**18)
@@ -141,8 +135,6 @@ def get_job(job):
 
 
 def setup_2_solutions():
-	set_payout(1)
-
 	job = Dummy()
 	job.wrd = 'antilopa'
 	job.author = eth.accounts[0]
@@ -194,13 +186,6 @@ def test_Roboth_payout_sent(eth_snapshot):
 
 
 	# fund it
-	'''
-	cobj.createJob.sendTransaction('ntuhenh',
-								_from=eth.accounts[5],
-								value=34*10**18,
-								gas=300*1000)
-	'''
-
 	cobj.checkPayout.sendTransaction(job.author, sol_best.sol_id,
 									_from=eth.accounts[0],
 									gas=120*1000)
