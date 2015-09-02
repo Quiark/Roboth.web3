@@ -104,6 +104,25 @@ UserDataManager.prototype.get = function() {
 	return this.react_var.get();
 }
 
+function PMap(cnt, req, req_args, item_fn, atend_fn) {
+	var batch = web3.createBatch();
+	var done = [];
+	for (var i = 0; i < cnt; i++) {
+		var args = _.clone(req_args);
+		args.push(i);
+		args.push(function(error, result) {
+			done[i] = true;
+			try {
+				callback(error, result, i);
+			} finally {
+				if (_.all(done)) atend_fn();
+			}
+		});
+		batch.add(req.request.apply(args));
+	}
+	batch.execute();
+}
+
 UserDataManager.prototype.update = function() {
 	var xUserData = {};
 	var xMySol = [];
@@ -112,14 +131,16 @@ UserDataManager.prototype.update = function() {
 		var user = Roboth.m_userdata_idx(i)
 		var usrdat = Roboth.m_userdata(user);
 
-		var mem_user_obj = {
+		var mem_user_obj = xUserData[user] = {
 			jobs: [],
 			solutions: []
 		};
 
 		// fetch dictjobs
-		for (var dji = 0; dji < usrdat[0].toFixed(); dji ++) {
-			var res = Roboth.getDictJob(user, dji);
+
+		PMap(usrdat[0].toFixed(), Roboth.getDictJob, [user], 
+		function(err, job, dji) { // for each item
+			if (err) return;
 			var job = {
 				word: web3.toAscii(res[0]),
 				reward: res[1].toString(),
@@ -127,15 +148,17 @@ UserDataManager.prototype.update = function() {
 				idx: dji
 			};
 			mem_user_obj.jobs.push(job);
-		}
 
-		xUserData[user] = mem_user_obj;
+		}, function() { // at end
+			//xUserData[user] = mem_user_obj;
+			// reading solutions must be here
+			// and it its finished callback setting the react-var
+		});
 	}
 
 	for (var i = 0; i < Roboth.m_next_userid().toFixed(); i++) {
 		var user = Roboth.m_userdata_idx(i)
 		var usrdat = Roboth.m_userdata(user);
-		var sol_ids = [];
 
 		// fetch solutions
 		for (var si = 0; si < usrdat[1].toFixed(); si ++) {

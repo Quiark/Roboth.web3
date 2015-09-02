@@ -35,12 +35,9 @@ contract NoLogger {
 contract Roboth is mortal, NoLogger {
 	// TODO: consider fees when sending rewards
 	// TODO: break it into more contracts when useful
-	// TODO: rename this to DictRoboth
 	// TODO: what if word already exists?
 	//		or for deleting words
 	//		may use a cache on server to keep track of what can be overwritten
-	// TODO: use shorter types for ids
-	// TODO: add payout, each user can invoke check for himlef
 	
 	// TODO: must be smaller for dev
 	uint256 public PAYOUT_BLOCKS = 10000;
@@ -107,7 +104,7 @@ contract Roboth is mortal, NoLogger {
 
 		uint32 jobid = usrdat.next_jobid;
 		usrdat.jobs[jobid].word = word;
-		usrdat.jobs[jobid].reward = msg.value - 100; // TODO fee
+		usrdat.jobs[jobid].reward = msg.value;
 		usrdat.jobs[jobid].bl_payout = block.number + PAYOUT_BLOCKS;
 		usrdat.next_jobid += 1;
 
