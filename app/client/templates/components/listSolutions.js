@@ -5,7 +5,8 @@ Meteor.startup(function() {
 		idx: null,
 		word_owner: null,
 		word: null,
-		reward: null
+		reward: null,
+		job_guid: null
 	});
 });
 
@@ -18,16 +19,18 @@ template_this.helpers({
 	'solutions': function() {
 		var userdata = RoInst().userdata_mgr.get();
 		var sel = Session.get('listSolutions_data');
-		if (sel.word_owner == null) return [];
-		var word = userdata[sel.word_owner].jobs[sel.idx].word;
+		if (sel.job_guid == null) return [];
+		var usrdat = userdata[sel.job_guid.user]; 
+
+		var word = usrdat.jobs[sel.job_guid.ix].word;
 
 		// iterate all, find the solutions for the job we are interested in
 		var result = [];
 
-		for (var s_id = 0; s_id < userdata[sel.word_owner].solutions.length; s_id++) {
-			var s = userdata[sel.word_owner].solutions[s_id];
+		for (var s_id = 0; s_id < usrdat.solutions.length; s_id++) {
+			var s = usrdat.solutions[s_id];
 
-			if (s.job_idx.equals(sel.idx)) {
+			if (s.job_idx.equals(sel.job_guid.ix)) {
 				result.push(s);
 			}
 		}
@@ -37,12 +40,11 @@ template_this.helpers({
 });
 
 function solutionUpDownVote(up, event, tpl) {
-	var btn = $(event.currentTarget);
-	var sol_id = btn.data('solId');
-	var sol_user = btn.data('solUser');
+	var $row = $(event.currentTarget).parent();
+	var sol_guid = ObjGuid.from_str($row.data('solGuid'));
 
-	if ((sol_id !== '') && sol_user) {
-		Roboth.solUpDownVote.sendTransaction(up, sol_id, sol_user, {from: Helpers.selectedAcc(), gas: 100 * 1000});
+	if (sol_guid !== null) {
+		Roboth.solUpDownVote.sendTransaction(up, sol_guid.ix, sol_guid.user, {from: Helpers.selectedAcc(), gas: 100 * 1000});
 	} else {
 		// TODO report some error
 		console.error('something is null');

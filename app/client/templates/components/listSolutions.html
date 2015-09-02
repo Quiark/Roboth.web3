@@ -6,7 +6,7 @@
 				<dt class="heading">Word</dt>
 				<dd>{{data.word}}</dd>
 				<dt class="heading">Proposed by</dt>
-				<dd>{{regName data.word_owner}}</dd>
+				<dd>{{regName data.job_guid.user}}</dd>
 			</dl>
             <table class="table table-bordered">
                 <thead><tr>
@@ -19,18 +19,10 @@
 					<tr>
 						<td>{{desc}}</td>
 						<td>{{regName author}}</td>
-						<td>
-							<div class="sol_upvote btn btn-primary" 
-								data-sol-id="{{idx}}"
-								data-sol-user="{{author}}"
-								data-job-id="{{job_idx}}"
-								data-job-user="{{job_user}}">^</div>
+						<td data-sol-guid="{{guidStr sol_guid}}">
+							<div class="sol_upvote btn btn-primary">^</div>
 							{{votes}}
-							<div class="sol_downvote btn btn-warning"
-								data-sol-id="{{idx}}"
-								data-sol-user="{{author}}"
-								data-job-id="{{job_idx}}"
-								data-job-user="{{job_user}}">v</div>
+							<div class="sol_downvote btn btn-warning">v</div>
 						</td>
 					</tr>
 				{{/each}}

@@ -90,3 +90,7 @@ Template.registerHelper('regName', function(addr) {
 Template.registerHelper('regAddr', function(name) {
 	return RoInst().reg_cache.regAddr(name);
 });
+
+Template.registerHelper('guidStr', function(g) {
+	return g.to_str();
+});

@@ -9,12 +9,11 @@ template_this.helpers({
 template_this.events({
 	'click .sol_check_payout': function(event, tpl) {
 		var $btn = $(event.currentTarget);
-		var sol_id = $btn.data('solId');
-		var job_user = $btn.data('jobUser');
-		if (RoEthCls.instance().Roboth.checkPayout.call(job_user, sol_id)) {
+		var sol_guid = ObjGuid.from_str($btn.data('solGuid'));
+		if (RoEthCls.instance().Roboth.checkPayout.call(sol_guid.user, sol_guid.ix)) {
 			Flash.success("payout", 'The solution has payout!', 5000);
 			// highlight to indicate we got payback
-			RoEthCls.instance().Roboth.checkPayout.sendTransaction(job_user, sol_id, {from: Helper.selectedAcc(), gas: 110*1000});
+			RoEthCls.instance().Roboth.checkPayout.sendTransaction(sol_guid.user, sol_guid.ix, {from: Helper.selectedAcc(), gas: 110*1000});
 		}
 	}
 });

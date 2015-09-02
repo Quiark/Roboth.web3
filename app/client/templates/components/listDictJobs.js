@@ -6,14 +6,15 @@ Meteor.startup(function() {
 	RoEthCls.instance();
 });
 
-function select_job(btn, varname) {
-    var job = RoInst().userdata_mgr.get()[btn.data('owner')].jobs[btn.data('jobId')];
+function select_job($elem, varname) {
+	var guid = ObjGuid.from_str($elem.data('jobGuid'));
+    var job = RoInst().userdata_mgr.get()[guid.user].jobs[guid.ix];
     Session.set(varname + '_data', {
         //idx: btn.data('jobId'),
         //word_owner: btn.data('owner'),
         word: job.word,
         reward: job.reward,
-        job_guid: ObjGuid.from_str(btn.data('job_guid'))
+        job_guid: guid
     });
 
 }
@@ -24,14 +25,14 @@ template_this.events({
 	},
 
 	'click .job_answer': function(event, tpl) {
-		var btn = $(event.currentTarget);
-        select_job(btn, 'createSolution');
+		var $elem = $(event.currentTarget).parent();
+        select_job($elem, 'createSolution');
 		Session.set('createSolution_visible', true);
 	},
 
 	'click .job_solutions': function(event, tpl) {
-		var btn = $(event.currentTarget);
-        select_job(btn, 'listSolutions');
+		var $elem = $(event.currentTarget).parent();
+        select_job($elem, 'listSolutions');
 	}
 });
 

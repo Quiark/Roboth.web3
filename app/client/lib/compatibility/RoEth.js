@@ -5,6 +5,7 @@ named RoEth for a lack of imagination
 @module RoEth
 */
 
+
 function RoEthCls() {
 	this. RegistrarABI = [{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"name","outputs":[{"name":"o_name","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"content","outputs":[{"name":"","type":"bytes32"}],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"addr","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"reserve","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"subRegistrar","outputs":[{"name":"o_subRegistrar","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_newOwner","type":"address"}],"name":"transfer","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_registrar","type":"address"}],"name":"setSubRegistrar","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"Registrar","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_a","type":"address"},{"name":"_primary","type":"bool"}],"name":"setAddress","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"},{"name":"_content","type":"bytes32"}],"name":"setContent","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"bytes32"}],"name":"disown","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"_name","type":"bytes32"}],"name":"register","outputs":[{"name":"","type":"address"}],"type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"}],"name":"Changed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"name","type":"bytes32"},{"indexed":true,"name":"addr","type":"address"}],"name":"PrimaryChanged","type":"event"}];
 	this. RegistrarAddr = "0x7baae5f7546381f59710b922f55110d9f8704b1d";
@@ -68,7 +69,8 @@ ObjGuid.prototype.to_str = function() {
 }
 
 ObjGuid.from_str = function(s) {
-    return new ObjGuid.call(s.split(':'));
+	var parts = s.split(':');
+    return new ObjGuid(parts[0], parts[1], parts[2]);
 }
 
 /* for UserDataManager
@@ -124,88 +126,127 @@ UserDataManager.prototype.get = function() {
 	return this.react_var.get();
 }
 
-function PMap(cnt, req, req_args, item_fn, atend_fn) {
+function constant(val) {
+	return function() { return val; };
+}
+
+function PMapBatch(cnt, req, req_args, item_fn, atend_fn) {
+	if (cnt == 0) {
+		atend_fn();
+		return;
+	}
 	var batch = web3.createBatch();
-	var done = [];
+	var done = _(cnt).times(constant(false));
 	for (var i = 0; i < cnt; i++) {
 		var args = _.clone(req_args);
 		args.push(i);
-		args.push(function(error, result) {
-			done[i] = true;
-			try {
-				callback(error, result, i);
-			} finally {
-				if (_.all(done)) atend_fn();
-			}
-		});
-		batch.add(req.request.apply(args));
+		(function(ix) {
+			args.push(function(error, result) {
+				done[ix] = true;
+				try {
+					item_fn(error, result, ix);
+				} finally {
+					if (_.all(done)) atend_fn();
+				}
+			});
+		})(i); // necessary to prevent 'i' being overwritten
+		batch.add(req.request.apply(null, args));
 	}
 	batch.execute();
+}
+
+function PMap(cnt, item_fn, atend_fn) {
+	if (cnt == 0) {
+		atend_fn();
+		return;
+	}
+
+	var done = _(cnt).times(constant(false));
+	for (var i = 0; i < cnt; i++) {
+		(function(ix) {
+			item_fn(i, function() {
+				// when item is finished
+				done[ix] = true;
+				if (_.all(done)) atend_fn();
+			});
+		})(i);
+	}
 }
 
 UserDataManager.prototype.update = function() {
 	var xUserData = {};
 	var xMySol = [];
+	var contract = '0xabcd';
+	var self = this;
 
-	for (var i = 0; i < Roboth.m_next_userid().toFixed(); i++) {
-		var user = Roboth.m_userdata_idx(i)
-		var usrdat = Roboth.m_userdata(user);
+	var user_cnt = Roboth.m_next_userid().toFixed();
 
-		var mem_user_obj = xUserData[user] = {
-			jobs: [],
-			solutions: []
-		};
+	var read_jobs_fn = function(next_fn) {
+		PMap(user_cnt, function(i, user_done_fn) {
+			// TODO: protect against exceptions here (next_fn must always be called)
+			var user = Roboth.m_userdata_idx(i)
+			var usrdat = Roboth.m_userdata(user);
 
-		// fetch dictjobs
-
-		PMap(usrdat[0].toFixed(), Roboth.getDictJob, [user], 
-		function(err, job, dji) { // for each item
-			if (err) return;
-			var job = {
-				word: web3.toAscii(res[0]),
-				reward: res[1].toString(),
-				owner: user,
-				idx: dji
-			};
-			mem_user_obj.jobs.push(job);
-
-		}, function() { // at end
-			//xUserData[user] = mem_user_obj;
-			// reading solutions must be here
-			// and it its finished callback setting the react-var
-		});
-	}
-
-	for (var i = 0; i < Roboth.m_next_userid().toFixed(); i++) {
-		var user = Roboth.m_userdata_idx(i)
-		var usrdat = Roboth.m_userdata(user);
-
-		// fetch solutions
-		for (var si = 0; si < usrdat[1].toFixed(); si ++) {
-			var res = Roboth.getSolution(user, si);
-			var sol = {
-				author: res[0],
-				job_idx: res[1],
-				idx: si,
-
-				desc: web3.toAscii(res[2]),
-				votes: res[3],
-				job_word: xUserData[user].jobs[res[1].toFixed()].word
+			var mem_user_obj = xUserData[user] = {
+				jobs: [],
+				solutions: []
 			};
 
-			xUserData[user].solutions.push(sol);
-			if (sol.author == Helpers.selectedAcc()) {
-				xMySol.push(sol);
-			}
-		}
+			// fetch dictjobs
+			PMapBatch(usrdat[0].toFixed(), Roboth.getDictJob, [user], 
+			function(err, res, dji) { // for each item
+				if (err) return;
+				var job = {
+					word: web3.toAscii(res[0]),
+					reward: res[1].toString(),
+					job_guid: new ObjGuid(user, dji, contract)
+				//owner: user,
+				//idx: dji
+				};
+				mem_user_obj.jobs.push(job);
+
+			}, user_done_fn);
+		}, next_fn);
 	}
 
-	// update UI
-	this.dirty = false;
-	this.react_var.set(xUserData);
-	this.mysol_react_var.set(xMySol);
+	var read_solutions_fn = function(next_fn) {
+		PMap(user_cnt, function(i, user_done_fn) {
+			var user = Roboth.m_userdata_idx(i)
+			var usrdat = Roboth.m_userdata(user);
 
-	console.log('updated to', xUserData);
+			// fetch solutions
+			PMapBatch(usrdat[1].toFixed(), Roboth.getSolution, [user],
+			function(err, res, si) {
+				var sol = {
+					author: res[0],
+					job_idx: res[1],
+					sol_guid: new ObjGuid(user, si, contract),
+					//idx: si,
+
+					desc: web3.toAscii(res[2]),
+					votes: res[3],
+					job_word: xUserData[user].jobs[res[1].toFixed()].word
+				};
+
+				xUserData[user].solutions.push(sol);
+				if (sol.author == Helpers.selectedAcc()) {
+					xMySol.push(sol);
+				}
+			}, user_done_fn);
+		}, next_fn);
+	}
+
+	var finish_fn = function() {
+		// update UI
+		self.dirty = false;
+		self.react_var.set(xUserData);
+		self.mysol_react_var.set(xMySol);
+
+		console.log('updated to', xUserData);
+	}
+
+	// chain it together
+	read_jobs_fn(function() { read_solutions_fn(finish_fn); });
 }
 
 /* idea

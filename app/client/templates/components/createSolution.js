@@ -19,7 +19,7 @@ template_this.events({
 		var data = Session.get('createSolution_data');
 		var solution = tpl.$('#iSolution').val();
 
-		Roboth.addSolution(solution, data.word_owner, data.idx, {from: Helpers.selectedAcc(), gas: 400 * 1000});
+		Roboth.addSolution(solution, data.job_guid.user, data.job_guid.ix, {from: Helpers.selectedAcc(), gas: 400 * 1000});
 		RoEthCls.instance().userdata_mgr.setDirty();
 	}
 
